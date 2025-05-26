@@ -47,9 +47,9 @@ const NavBar = () => {
           {/* <Form className="d-flex">
             <Button variant="outline-dark px-4 py-2">Book Now</Button>
           </Form> */}
-          <Nav className="d-flex">
+          {/* <Nav className="d-flex">
             <Button variant="outline-dark px-4 py-2 mx-5" onClick={handleLogout}>logout</Button>
-          </Nav>
+          </Nav> */}
         </Navbar.Collapse>
 
       </Container>

@@ -23,7 +23,6 @@ const getMasterDetailsApi = async (category) => {
   return data;
 };
 
-
 const roomBookingApi = async (jsonData) => {
   console.log('jsonData====>', jsonData)
   const { data } = await withAuthApi.post(`/api/v1/booking/studiobooking`, jsonData);
@@ -37,4 +36,14 @@ const getRoomDetailsApi = async (id) => {
   console.log('data====>', data)
   return data;
 };
-export { getUserInfoApi, roomBookingApi, updateUserApi, getRoomListApi, getMasterDetailsApi, getRoomDetailsApi };
+
+const getAvilableSlotApi = async (id, bookingDate) => {
+  console.log('id====>', id)
+  console.log('bookingDate====>', bookingDate)
+  const { data } = await withAuthApi.get(`/api/v1/rooms/available/slots?bookingDate=${bookingDate}&roomId=${id}`);
+  console.log('data====>', data)
+  return data;
+};
+
+
+export { getUserInfoApi, roomBookingApi, updateUserApi, getRoomListApi, getMasterDetailsApi, getRoomDetailsApi, getAvilableSlotApi };

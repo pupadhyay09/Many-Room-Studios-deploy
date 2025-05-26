@@ -1,4 +1,4 @@
-import { getMasterDetailsApi, getRoomListApi, roomBookingApi, getRoomDetailsApi } from "../../api/requests/protected";
+import { getMasterDetailsApi, getRoomListApi, roomBookingApi, getRoomDetailsApi, getAvilableSlotApi } from "../../api/requests/protected";
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
@@ -7,6 +7,7 @@ const initialState = {
   roomList: [],
   masterList: [],
   roomDetails: {},
+  availableSlots: [],
 };
 
 export const getRoomList = createAsyncThunk("room/list", async (jsonData) => {
@@ -32,12 +33,20 @@ export const getRoomDetails = createAsyncThunk("room/details", async (id) => {
   return data;
 });
 
+export const getAvailableSlots = createAsyncThunk("room/availableSlots", async ({ id, bookingDate }) => {
+  const data = await getAvilableSlotApi(id, bookingDate);
+  return data;
+});
+
 const userSlice = createSlice({
   name: "rooms",
   initialState,
   reducers: {
     setRoomDetails: (state, action) => {
       state.roomDetails = action.payload;
+    },
+    setAvailableSlots: (state, action) => {
+      state.availableSlots = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -75,10 +84,20 @@ const userSlice = createSlice({
       })
       .addCase(getRoomDetails.rejected, (state) => {
         state.isLoading = false;
+      })
+      .addCase(getAvailableSlots.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(getAvailableSlots.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.availableSlots = action.payload;
+      })
+      .addCase(getAvailableSlots.rejected, (state) => {
+        state.isLoading = false;
       });
   },
 });
 
-export const { setRoomDetails } = userSlice.actions;
+export const { setRoomDetails, setAvailableSlots } = userSlice.actions;
 
 export default userSlice.reducer;

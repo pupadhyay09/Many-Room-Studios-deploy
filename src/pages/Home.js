@@ -10,13 +10,14 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { getMasterDetails, getRoomList, setRoomDetails } from "../redux/slices/rooms";
 import moment from "moment";
+import { toast } from "react-toastify"; // Add this if you want to show error messages
 
 const Home = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [date, setDate] = useState(moment(new Date()).format("YYYY-MM-DD"));
-  const [startTime, setStartTime] = useState(moment(new Date()).format("HH:mm:ss"));
-  const [endTime, setEndTime] = useState(moment(new Date()).add(1, 'hour').format("HH:mm:ss"));
+  const [startTime, setStartTime] = useState(moment(new Date()).format("HH:mm"));
+  const [endTime, setEndTime] = useState(moment(new Date()).add(1, 'hour').format("HH:mm"));
   const [people, setPeople] = useState(1);
   const [eventType, setEventType] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,11 +51,34 @@ const Home = () => {
     getRoomListCall()
   }, [dispatch, eventType, startTime, endTime, people, date]);
 
+  const handleStartTimeChange = (value) => {
+    setStartTime(value);
+    // If endTime is less than 1 hour after startTime, adjust endTime
+    const start = moment(value, "HH:mm");
+    const end = moment(endTime, "HH:mm");
+    if (end.diff(start, "minutes") < 60) {
+      setEndTime(start.clone().add(1, "hour").format("HH:mm"));
+    }
+  };
+
+  const handleEndTimeChange = (value) => {
+    const start = moment(startTime, "HH:mm");
+    const end = moment(value, "HH:mm");
+    if (end.diff(start, "minutes") < 60) {
+      toast.error("End time must be at least 1 hour after start time.");
+      return;
+    }
+    setEndTime(value);
+  };
+
   const getRoomListCall = () => {
+    // Convert to HH:mm:ss for API
+    const startTimeApi = moment(startTime, "HH:mm").format("HH:mm:ss");
+    const endTimeApi = moment(endTime, "HH:mm").format("HH:mm:ss");
     const data = {
       bookingDate: date ? date : moment(new Date()).format("YYYY-MM-DD"),
-      startTime: startTime ? startTime : "00:00:00",
-      endTime: endTime ? endTime : "00:00:00",
+      startTime: startTimeApi,
+      endTime: endTimeApi,
       numberofpeople: people,
       eventType: eventType
     };
@@ -112,16 +136,18 @@ const Home = () => {
                 <TimeSelect
                   label="Start time"
                   value={startTime}
-                  onChange={setStartTime}
-                  minTime={isToday ? nowTime : "00:00:00"}
+                  onChange={handleStartTimeChange}
+                  minTime={isToday ? nowTime.slice(0,5) : "00:00"}
+                  format="HH:mm"
                 />
               </Col>
               <Col lg={2} md={6} className="mb-3">
                 <TimeSelect
                   label="End time"
                   value={endTime}
-                  onChange={setEndTime}
-                  minTime={startTime}
+                  onChange={handleEndTimeChange}
+                  minTime={moment(startTime, "HH:mm").add(1, "hour").format("HH:mm")}
+                  format="HH:mm"
                 />
               </Col>
               <Col lg={2} md={6} className="mb-3">

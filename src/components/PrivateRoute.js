@@ -5,12 +5,12 @@ import { useAuth } from "../context/AuthContext";
 
 const PrivateRoute = ({ children }) => {
     const { token } = useAuth();
-    console.log("🔐 PrivateRoute | token =", token);
+    // console.log("🔐 PrivateRoute | token =", token);
 
-    if (!token || token === "null" || token === "undefined") {
-        console.warn("🚫 No valid token, redirecting to /login");
-        return <Navigate to="/login" />;
-    }
+    // if (!token || token === "null" || token === "undefined") {
+    //     console.warn("🚫 No valid token, redirecting to /login");
+    //     return <Navigate to="/login" />;
+    // }
 
     return children;
 };

@@ -11,7 +11,7 @@ import images from "../assets/images/Images";
 import { useDispatch, useSelector } from "react-redux";
 import { URLS } from "../api/Urls";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { getMasterDetails, getRoomDetails, setRoomDetails } from "../redux/slices/rooms";
+import { getMasterDetails, getRoomDetails, setRoomDetails, getAvailableSlots } from "../redux/slices/rooms";
 import noImage from '../assets/images/noimage.png';
 import { compose } from "@reduxjs/toolkit";
 
@@ -21,7 +21,7 @@ const RoomDetails = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
-  const { roomDetails } = useSelector((state) => state.rooms);
+  const { roomDetails, availableSlots } = useSelector((state) => state.rooms);
 
   useEffect(() => {
     if (id) {
@@ -36,6 +36,14 @@ const RoomDetails = () => {
   useEffect(() => {
     console.log('Location state:sfbsdmf', location.state);
   }, [location.state]);
+
+  // Example: fetch slots for today on mount or when roomDetails.id changes
+  useEffect(() => {
+    if (roomDetails?.id) {
+      const today = new Date().toISOString().split("T")[0];
+      dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: today }));
+    }
+  }, [roomDetails?.id, dispatch]);
 
   const mainroom = [
     {
@@ -233,7 +241,7 @@ const RoomDetails = () => {
       <section>
         <Container>
           <div className="bookingdesign">
-            <BookingCelender />
+            <BookingCelender availableSlots={availableSlots} />
           </div>
         </Container>
       </section>

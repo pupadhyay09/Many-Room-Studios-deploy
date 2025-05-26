@@ -8,12 +8,10 @@ import { FaClock } from 'react-icons/fa';
 import { IoMdArrowRoundBack } from "react-icons/io";
 import { GrFormNextLink } from "react-icons/gr";
 import { useNavigate, useLocation } from "react-router-dom";
-import { EventDropdown } from "./Dropdown";
-import { useSelector } from "react-redux";
-import moment from "moment";
-import TimePicker from 'react-time-picker';
+import { useSelector, useDispatch } from "react-redux";
+import { getAvailableSlots } from "../redux/slices/rooms";
 
-const BookingCalendar = () => {
+const BookingCalendar = ({ availableSlots }) => {
     const location = useLocation();
     const [step, setStep] = useState(1);
     const [selectedDate, setSelectedDate] = useState(""); // Selected Date
@@ -26,16 +24,11 @@ const BookingCalendar = () => {
     const [errors, setErrors] = useState({});
     const navigate = useNavigate();
     const { roomDetails } = useSelector((state) => state.rooms);
-    const datePickerRefStart = React.useRef(null);
-    const datePickerRefEnd = React.useRef(null);
+    const dispatch = useDispatch();
 
-    const times = [
-        "00:00", "01:00", "02:00", "03:00", "04:00", "05:00",
-        "06:00", "07:00", "08:00", "09:00", "10:00", "11:00",
-        "12:00", "13:00", "14:00", "15:00", "16:00", "17:00",
-        "18:00", "19:00", "20:00", "21:00", "22:00", "23:00",
-        "24:00"
-    ];
+    const timeOptions = Array.isArray(availableSlots)
+        ? availableSlots.map(slot => slot.name.padStart(2, "0") + ":00")
+        : [];
 
     const handleDateSelect = (date) => {
         console.log("Selected date:", date);
@@ -98,6 +91,13 @@ const BookingCalendar = () => {
             if (formData.eventType) setEventType(formData.eventType);
         }
     }, [location]);
+
+    useEffect(() => {
+        if (selectedDate && roomDetails?.id) {
+            const dateStr = new Date(selectedDate).toISOString().split("T")[0];
+            dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: dateStr }));
+        }
+    }, [selectedDate, roomDetails?.id, dispatch]);
 
     const handleChange = (setter, field) => (e) => {
         setter(e.target.value);
@@ -195,7 +195,7 @@ const BookingCalendar = () => {
                                     <div className="time-select-wrapper">
                                         <p>{selectedDate?.toDateString()}</p>
                                         <div className="time-grid time-grid-scrollable">
-                                            {times.map((time) => {
+                                            {timeOptions.map((time) => {
                                                 const isSelected = selectedTime === time;
                                                 return isSelected ? (
                                                     <div key={time} className="d-flex gap-2">
@@ -244,7 +244,7 @@ const BookingCalendar = () => {
                                                 }}
                                             >
                                                 <option value="">Select Start Time</option>
-                                                {times.slice(0, -1).map((time, idx) => (
+                                                {timeOptions.map((time) => (
                                                     <option key={time} value={time}>{time}</option>
                                                 ))}
                                             </Form.Select>
@@ -266,7 +266,7 @@ const BookingCalendar = () => {
                                             >
                                                 <option value="">Select End Time</option>
                                                 {selectedTime &&
-                                                    times
+                                                    timeOptions
                                                         .filter(time => time > selectedTime)
                                                         .map(time => (
                                                             <option key={time} value={time}>{time}</option>
