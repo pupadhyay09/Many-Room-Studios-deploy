@@ -10,32 +10,51 @@ const initialState = {
   availableSlots: [],
 };
 
-export const getRoomList = createAsyncThunk("room/list", async (jsonData) => {
-  const data = await getRoomListApi(jsonData);
-  return data;
+export const getRoomList = createAsyncThunk("room/list", async (jsonData, thunkAPI) => {
+  try {
+    const data = await getRoomListApi(jsonData);
+    return data;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error?.message || "Failed to fetch room list.");
+  }
 });
 
-export const getMasterDetails = createAsyncThunk("master/list", async (eventtype) => {
-  const data = await getMasterDetailsApi(eventtype);
-  return data;
+export const getMasterDetails = createAsyncThunk("master/list", async (eventtype, thunkAPI) => {
+  try {
+    const data = await getMasterDetailsApi(eventtype);
+    return data;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error?.message || "Failed to fetch master details.");
+  }
 });
 
-export const roomBooking = createAsyncThunk("room/bokking", async (jsonData) => {
-  console.log('jsonData====>', jsonData)
-  const data = await roomBookingApi(jsonData);
-  console.log('data====>', data)
-  return data;
+export const roomBooking = createAsyncThunk("room/bokking", async (jsonData, thunkAPI) => {
+  try {
+    const data = await roomBookingApi(jsonData);
+    // Return with type 'success'
+    return { type: "success", data };
+  } catch (error) {
+    // Return with type 'rejected'
+    return thunkAPI.rejectWithValue({ type: "rejected", message: error?.message || "Booking failed." });
+  }
 });
 
-export const getRoomDetails = createAsyncThunk("room/details", async (id) => {
-  const data = await getRoomDetailsApi(id);
-  console.log('data====>', data)
-  return data;
+export const getRoomDetails = createAsyncThunk("room/details", async (id, thunkAPI) => {
+  try {
+    const data = await getRoomDetailsApi(id);
+    return data;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error?.message || "Failed to fetch room details.");
+  }
 });
 
-export const getAvailableSlots = createAsyncThunk("room/availableSlots", async ({ id, bookingDate }) => {
-  const data = await getAvilableSlotApi(id, bookingDate);
-  return data;
+export const getAvailableSlots = createAsyncThunk("room/availableSlots", async ({ id, bookingDate }, thunkAPI) => {
+  try {
+    const data = await getAvilableSlotApi(id, bookingDate);
+    return data;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error?.message || "Failed to fetch available slots.");
+  }
 });
 
 const userSlice = createSlice({

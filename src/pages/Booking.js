@@ -86,15 +86,20 @@ const Booking = () => {
 
     try {
       const action = await dispatch(roomBooking(JSON.stringify(data)));
-      const response = action.payload; // Redux Toolkit me response payload me hota hai
-      console.log("response", response);
-      if (response && response.stripsessionurl) {
-        window.location.href = response.stripsessionurl;
-      } else {
-        setErrors({ api: "Stripe URL not received." });
+      console.log('Booking action dispatched:', action);
+      if (action.payload?.type === "success") {
+        // Success logic
+        const response = action.payload.data;
+        if (response && response.stripsessionurl) {
+          window.location.href = response.stripsessionurl;
+        }
+      } else if (action.payload?.type === "rejected" || action.error) {
+        // Error logic
+        setErrors({ api: action.payload?.message || action.error?.message || "Booking failed." });
       }
     } catch (error) {
-      setErrors({ api: "Booking failed. Please try again." });
+      // Show API error message if available
+      setErrors({ api: error?.message || "Booking failed. Please try again." });
     }
   };
 

@@ -135,7 +135,7 @@ const BookingCalendar = ({ availableSlots }) => {
         const eventTypeName = eventTypeObj ? eventTypeObj.text : "";
         console.log("eventTypeName:", eventTypeName);
         // const dateStr = new Date(selectedDate).toISOString().split("T")[0];
-        const date = new Date("Wed May 28 2025 00:00:00 GMT+0530");
+        const date = new Date(selectedDate);
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
