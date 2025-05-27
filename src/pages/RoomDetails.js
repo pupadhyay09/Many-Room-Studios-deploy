@@ -41,6 +41,7 @@ const RoomDetails = () => {
   useEffect(() => {
     if (roomDetails?.id) {
       const today = new Date().toISOString().split("T")[0];
+      console.log('Fetching available slots for room:', roomDetails.id, 'on date:', today);
       dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: today }));
     }
   }, [roomDetails?.id, dispatch]);

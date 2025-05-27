@@ -8,6 +8,23 @@ import { roomBooking } from "../redux/slices/rooms";
 import { URLS } from "../api/Urls";
 import noImage from '../assets/images/noimage.png';
 
+function to12HourFormat(timeStr) {
+  // timeStr: "2025-05-28T13:00:00.000Z" or "13:00"
+  let time = timeStr;
+  if (timeStr.includes("T")) {
+    time = timeStr.split("T")[1].substring(0, 5); // "13:00"
+  }
+  const [hour, minute] = time.split(":").map(Number);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${minute.toString().padStart(2, "0")} ${ampm}`;
+}
+
+function isValidEmail(email) {
+  // Simple email regex
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 const Booking = () => {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -39,7 +56,11 @@ const Booking = () => {
     e.preventDefault();
     let newErrors = {};
     if (!form.name) newErrors.name = "Name is required.";
-    if (!form.email) newErrors.email = "Email is required.";
+    if (!form.email) {
+      newErrors.email = "Email is required.";
+    } else if (!isValidEmail(form.email)) {
+      newErrors.email = "Please enter a valid email address.";
+    }
     if (!form.mobileNo) newErrors.mobileNo = "Phone number is required.";
     if (!form.purposeOfHire) newErrors.purposeOfHire = "Purpose of hire is required.";
     if (!form.termsAndCondition) newErrors.termsAndCondition = "You must accept the terms and conditions.";
@@ -318,7 +339,7 @@ const Booking = () => {
                 <strong>Start Time</strong>
                 <div className="numbertext">
                   {bookingData.startTime
-                    ? bookingData.startTime.split("T")[1]?.substring(0, 5)
+                    ? to12HourFormat(bookingData.startTime)
                     : "--"}
                 </div>
               </div>
@@ -326,7 +347,7 @@ const Booking = () => {
                 <strong>End Time</strong>
                 <div className="numbertext">
                   {bookingData.endTime
-                    ? bookingData.endTime.split("T")[1]?.substring(0, 5)
+                    ? to12HourFormat(bookingData.endTime)
                     : "--"}
                 </div>
               </div>

@@ -11,6 +11,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { getAvailableSlots } from "../redux/slices/rooms";
 
+function to12HourFormat(time24) {
+    // time24: "HH:mm"
+    const [hour, minute] = time24.split(":").map(Number);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12}:${minute.toString().padStart(2, "0")} ${ampm}`;
+}
+
 const BookingCalendar = ({ availableSlots }) => {
     const location = useLocation();
     const [step, setStep] = useState(1);
@@ -94,8 +102,12 @@ const BookingCalendar = ({ availableSlots }) => {
 
     useEffect(() => {
         if (selectedDate && roomDetails?.id) {
-            const dateStr = new Date(selectedDate).toISOString().split("T")[0];
-            dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: dateStr }));
+            const date = new Date(selectedDate);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const formatted = `${year}-${month}-${day}`;
+            dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: formatted }));
         }
     }, [selectedDate, roomDetails?.id, dispatch]);
 
@@ -118,13 +130,19 @@ const BookingCalendar = ({ availableSlots }) => {
 
         setErrors(newErrors);
         if (Object.keys(newErrors).length > 0) return;
-        const eventTypeObj = roomDetails?.roomEventsList?.find(opt => String(opt.id) === String(eventType));
-        const eventTypeName = eventTypeObj ? eventTypeObj.name : "";
+        const eventTypeObj = roomDetails?.roomEventsList?.find(opt => String(opt.value) === String(eventType));
+        console.log("eventTypeObj:", eventTypeObj);
+        const eventTypeName = eventTypeObj ? eventTypeObj.text : "";
+        console.log("eventTypeName:", eventTypeName);
+        // const dateStr = new Date(selectedDate).toISOString().split("T")[0];
+        const date = new Date("Wed May 28 2025 00:00:00 GMT+0530");
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const formatted = `${year}-${month}-${day}`;
 
-        const dateStr = new Date(selectedDate).toISOString().split("T")[0];
-
-        const startTimestamp = `${dateStr}T${selectedTime}:00.000Z`;
-        const endTimestamp = `${dateStr}T${endTime}:00.000Z`;
+        const startTimestamp = `${formatted}T${selectedTime}:00.000Z`;
+        const endTimestamp = `${formatted}T${endTime}:00.000Z`;
 
         const bookingFormData = {
             roomID: roomDetails?.id,
@@ -133,7 +151,7 @@ const BookingCalendar = ({ availableSlots }) => {
             eventTypeName: eventTypeName,
             people: Number(people),
             eventType: eventType,
-            date: dateStr,
+            date: formatted,
             franchiseeAdminID: roomDetails?.franchiseeAdminID,
             roomImagePath: roomDetails?.roomImagePath,
             roomName: roomDetails?.roomName,
@@ -143,6 +161,7 @@ const BookingCalendar = ({ availableSlots }) => {
             taxes: roomDetails?.vatPercentage,
             ownership: roomDetails.ownershipTypeName
         };
+        console.log("Booking Form Data:", bookingFormData);
         localStorage.setItem("bookingFormData", JSON.stringify(bookingFormData));
         // Pass data to Booking page
         navigate("/booking", { state: bookingFormData });
@@ -204,7 +223,7 @@ const BookingCalendar = ({ availableSlots }) => {
                                                             className="time-btn py-3 w-100"
                                                             onClick={() => handleTimeSelect(time)}
                                                         >
-                                                            {time}
+                                                            {to12HourFormat(time)}
                                                         </Button>
                                                         <Button onClick={handleNext} className="next-btn py-3 w-100" variant="success">
                                                             Next <GrFormNextLink />
@@ -217,7 +236,7 @@ const BookingCalendar = ({ availableSlots }) => {
                                                             className="time-btn py-3 w-100"
                                                             onClick={() => handleTimeSelect(time)}
                                                         >
-                                                            {time}
+                                                            {to12HourFormat(time)}
                                                         </Button>
                                                     </div>
                                                 );
@@ -245,7 +264,7 @@ const BookingCalendar = ({ availableSlots }) => {
                                             >
                                                 <option value="">Select Start Time</option>
                                                 {timeOptions.map((time) => (
-                                                    <option key={time} value={time}>{time}</option>
+                                                    <option key={time} value={time}>{to12HourFormat(time)}</option>
                                                 ))}
                                             </Form.Select>
                                             {errors.selectedTime && (
@@ -269,7 +288,7 @@ const BookingCalendar = ({ availableSlots }) => {
                                                     timeOptions
                                                         .filter(time => time > selectedTime)
                                                         .map(time => (
-                                                            <option key={time} value={time}>{time}</option>
+                                                            <option key={time} value={time}>{to12HourFormat(time)}</option>
                                                         ))
                                                 }
                                             </Form.Select>
