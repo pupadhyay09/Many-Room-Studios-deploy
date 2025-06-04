@@ -10,19 +10,27 @@ import { GrFormNextLink } from "react-icons/gr";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { getAvailableSlots } from "../redux/slices/rooms";
+import { FaEdit, FaTrash, FaSave } from "react-icons/fa";
+import TimeEditModal from "./TimeEditModal";
 
 
 const BookingCalendar = ({ availableSlots }) => {
   const [step, setStep] = useState(1);
   const [selectedDates, setSelectedDates] = useState([]); // Make it an array
   const [selectedSlotsByDate, setSelectedSlotsByDate] = useState({}); // { '2025-06-04': [slotId1, slotId2] }
+  const [currentDate, setCurrentDate] = useState(null);
+  const [selectedTime, setSelectedTime] = useState([]);
+  const [endTime, setEndTime] = useState("");
   const [currentDate, setCurrentDate] = useState(null); // Currently clicked date to show slots
-  const [people, setPeople] = useState("");
+ const [people, setPeople] = useState("");
   const [eventType, setEventType] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
   const [visibleStep, setVisibleStep] = useState(1);
   const [errors, setErrors] = useState({});
+  const [bookings, setBookings] = useState([]);
+  const [editIndex, setEditIndex] = useState(null);
   const navigate = useNavigate();
+  const [editModalIndex, setEditModalIndex] = useState(null);
   const { roomDetails } = useSelector((state) => state.rooms);
   const dispatch = useDispatch();
 
@@ -33,11 +41,24 @@ const BookingCalendar = ({ availableSlots }) => {
     return `${year}-${month}-${day}`;
   };
 
+
   const to12HourFormat = (time24) => {
     const [hour, minute] = time24.split(":").map(Number);
     const ampm = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 === 0 ? 12 : hour % 12;
     return `${hour12}:${minute.toString().padStart(2, "0")} ${ampm}`;
+  };
+  const formatTimeRange = (range) => {
+    const [start, end] = range.split("-");
+    return `${to12HourFormat(start)} - ${to12HourFormat(end)}`;
+  };
+
+  const handleDateSelect = async (date) => {
+    if (roomDetails?.id) {
+      const dateKey = formatDate(date);
+      await dispatch(
+        getAvailableSlots({ id: roomDetails.id, bookingDate: dateKey })
+      );
   }
 
   const formatTimeRange = (range) => {
@@ -49,7 +70,7 @@ const BookingCalendar = ({ availableSlots }) => {
     if (roomDetails?.id) {
       const dateKey = formatDate(date);
       await dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: dateKey }));
-    }
+ }
     setCurrentDate(date);
   };
 
@@ -65,11 +86,19 @@ const BookingCalendar = ({ availableSlots }) => {
 
       if (updatedSlots.length === 0) {
         delete newSelectedSlots[dateKey];
-        setSelectedDates((prevDates) => prevDates.filter((d) => formatDate(d) !== dateKey));
+   setSelectedDates((prevDates) =>
+          prevDates.filter((d) => formatDate(d) !== dateKey)
+        );
+      } else {
+        setSelectedDates((prevDates) => {
+          const isDateSelected = prevDates.some(
+            (d) => formatDate(d) === dateKey
+          );
+   setSelectedDates((prevDates) => prevDates.filter((d) => formatDate(d) !== dateKey));
       } else {
         setSelectedDates((prevDates) => {
           const isDateSelected = prevDates.some((d) => formatDate(d) === dateKey);
-          return isDateSelected ? prevDates : [...prevDates, new Date(dateKey)];
+  return isDateSelected ? prevDates : [...prevDates, new Date(dateKey)];
         });
       }
 
@@ -99,11 +128,49 @@ const BookingCalendar = ({ availableSlots }) => {
     setStep(visibleStep);
   }, [visibleStep]);
 
+  useEffect(() => {
+    const times = [];
+    for (let i = 0; i < 25; i++) {
+      const hour = 9 + Math.floor(i / 2);
+      const minute = (i % 2) * 30;
+      const time = `${hour.toString().padStart(2, "0")}:${
+        minute === 0 ? "00" : "30"
+      }`;
+      times.push(time);
+    }
+
+    const mockData = [
+      {
+        date: "2025-06-04",
+        startTimes: times,
+        qty: 2,
+        unit: 10,
+        price: 20,
+      },
+    ];
+
+    setBookings(mockData);
+  }, []);
+
+  const handleDeleteDateRow = (dateKey) => {
+    setSelectedSlotsByDate((prev) => {
+      const updated = { ...prev };
+      delete updated[dateKey];
+      return updated;
+    });
+    setSelectedDates((prev) => prev.filter((d) => formatDate(d) !== dateKey));
   const handleChange = (setter, field) => (e) => {
     setter(e.target.value);
     setErrors((prev) => ({ ...prev, [field]: "" }));
-  };
+> };
 
+  const chunkArray = (arr, size) => {
+    const chunks = [];
+    for (let i = 0; i < arr.length; i += size) {
+      chunks.push(arr.slice(i, i + size));
+    }
+    return chunks;
+  };
   const handleSubmit = (e) => {
     e.preventDefault();
     let newErrors = {};
@@ -114,7 +181,9 @@ const BookingCalendar = ({ availableSlots }) => {
     const missingTimes = selectedDates.some(
       (date) => !selectedSlotsByDate[formatDate(date)]
     );
-    if (missingTimes) newErrors.selectedTime = "Please select time for each date.";
+ if (missingTimes)
+      newErrors.selectedTime = "Please select time for each date.";
+  if (missingTimes) newErrors.selectedTime = "Please select time for each date.";
 
     if (!people) newErrors.people = "Number of people is required.";
     if (Number(people) > Number(roomDetails?.capacity)) {
@@ -132,7 +201,14 @@ const BookingCalendar = ({ availableSlots }) => {
     const bookingSlotList = selectedDates.flatMap((date) => {
       const dateKey = formatDate(date);
       const slots = selectedSlotsByDate[dateKey] || [];
-      return slots.map((slot) => {
+ return slots.map((slot) => {
+        const [start, end] = slot.name.split("-");
+        const startDate = new Date(`${dateKey}T${start}:00`);
+        const endDate = new Date(`${dateKey}T${end}:00`);
+        return {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+  return slots.map((slot) => {
         const [start, end] = slot.name.split("-");
         const startDate = `${formatDate(date)}T${start}:00.000Z`;
         const endDate = `${formatDate(date)}T${end}:00.000Z`;
@@ -140,27 +216,33 @@ const BookingCalendar = ({ availableSlots }) => {
         return {
           startDate: startDate,
           endDate: endDate,
-          roomSlotID: slot.id,
+ roomSlotID: slot.id,
         };
       });
     });
 
-    const allStartDates = bookingSlotList.map((s) => new Date(s.startDate));
+  const allStartDates = bookingSlotList.map((s) => new Date(s.startDate));
     const allEndDates = bookingSlotList.map((s) => new Date(s.endDate));
 
     const startDateTime = new Date(Math.min(...allStartDates)).toISOString();
     const endDateTime = new Date(Math.max(...allEndDates)).toISOString();
 
-    const bookingFormData = {
+   const bookingFormData = {
       franchiseeAdminID: roomDetails?.franchiseeAdminID,
       roomID: roomDetails?.id,
-      bookingSlotList,
+   dates: bookingSlotList,
+      gridDates: selectedSlotsByDate,
+      people: Number(people),
+      eventType,
+      eventTypeName,
+      franchiseeAdminID: roomDetails?.franchiseeAdminID,
+   bookingSlotList,
       startDateTime,
       endDateTime,
       people: Number(people),
       eventType,
       eventTypeName,
-      roomImagePath: roomDetails?.roomImagePath,
+   roomImagePath: roomDetails?.roomImagePath,
       roomName: roomDetails?.roomName,
       location: roomDetails?.location,
       hourlyPrice: roomDetails?.hourlyPrice,
@@ -174,7 +256,16 @@ const BookingCalendar = ({ availableSlots }) => {
     navigate("/booking", { state: bookingFormData });
   };
 
-
+  console.log("selectedSlotsByDate===>", selectedSlotsByDate);
+  const selectedSlotsByDategrid = Object.entries(selectedSlotsByDate).map(
+    ([date, slots]) => ({
+      date,
+      startTimes: slots.map((slot) => slot.name),
+      qty: slots.length,
+      unit: "Slot(s)", // or your actual unit if dynamic
+      price: (slots.length * 100).toFixed(2), // Example logic
+    })
+  );
   return (
     <Container className="booking-wrapper">
       <Row className="booking-card">
@@ -253,9 +344,10 @@ const BookingCalendar = ({ availableSlots }) => {
                     <div className="time-grid time-grid-scrollable">
                       {availableSlots.map((slot) => {
                         const dateKey = formatDate(currentDate);
-                        const isSelected = selectedSlotsByDate[dateKey]?.some((s) => s.id === slot.id);
-
-                        return (
+   const isSelected = selectedSlotsByDate[dateKey]?.some(
+                          (s) => s.id === slot.id
+   const isSelected = selectedSlotsByDate[dateKey]?.some((s) => s.id === slot.id);
+ return (
                           <Button
                             key={slot.id}
                             variant={isSelected ? "primary" : "outline-primary"}
@@ -267,7 +359,7 @@ const BookingCalendar = ({ availableSlots }) => {
                         );
                       })}
                     </div>
-                  </div>
+  </div>
                 )}
                 {selectedSlotsByDate && Object.keys(selectedSlotsByDate).length > 0 && (
                   <div className="d-flex justify-content-end mt-3">
@@ -278,8 +370,20 @@ const BookingCalendar = ({ availableSlots }) => {
                     >
                       Next <GrFormNextLink />
                     </Button>
-                  </div>
+   </div>
                 )}
+                {selectedSlotsByDate &&
+                  Object.keys(selectedSlotsByDate).length > 0 && (
+                    <div className="d-flex justify-content-end mt-3">
+                      <Button
+                        onClick={handleNext}
+                        className="next-btn py-3 w-100 me-4"
+                        variant="success"
+                      >
+                        Next <GrFormNextLink />
+                      </Button>
+                    </div>
+                  )}
               </div>
             </div>
           )}
@@ -287,7 +391,71 @@ const BookingCalendar = ({ availableSlots }) => {
           {step === 3 && (
             <Form className="form-grid" onSubmit={handleSubmit}>
               <Row className="justify-content-between">
-                {/* <Col md={5}>
+  <Col lg={12}>
+                  <h5 className="mb-3">Booking Summary</h5>
+                  <div className="table-responsive">
+                    <table className="table table-bordered table-striped">
+                      <thead className="table-dark">
+                        <tr>
+                          <th>Date</th>
+                          <th>Time</th>
+                          <th>Qty</th>
+                          <th>Unit</th>
+                          <th>Price</th>
+                          <th>Manage</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedSlotsByDategrid.map((booking, index) => (
+                          <tr key={index}>
+                            <td>{booking.date}</td>
+                            <td>
+                              <div
+                                style={{
+                                  maxHeight: "37px",
+                                  overflowY: "auto",
+                                }}
+                                className="time-scroll-wrapper"
+                              >
+                                {booking.startTimes.map((time, index) => (
+                                  <div key={index} className="mb-1">
+                                    <span className="py-1 text-nowrap d-inline-block w-100">
+                                      {formatTimeRange(time)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td>{booking.qty}</td>
+                            <td>{booking.unit}</td>
+                            <td>{booking.price}</td>
+                            <td>
+                              <div className="set-table-btn d-flex gap-2">
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={() => setEditModalIndex(index)}
+                                >
+                                  <FaEdit size={16} />
+                                </Button>
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleDeleteDateRow(booking.date)
+                                  }
+                                >
+                                  <FaTrash size={16} />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Col>
+   {/* <Col md={5}>
                   <Form.Group className="mb-4">
                     <Form.Label>Start Time</Form.Label>
                     <Form.Select
@@ -406,7 +574,7 @@ const BookingCalendar = ({ availableSlots }) => {
                     )}
                   </Form.Group>
                 </Col> */}
-              </Row>
+    </Row>
 
               <div className="form-btn-text">
                 <p className="text-center">
@@ -425,6 +593,26 @@ const BookingCalendar = ({ availableSlots }) => {
           )}
         </Col>
       </Row>
+
+      <div>
+        {editModalIndex !== null && (
+          <TimeEditModal
+            show={true}
+            onHide={() => setEditModalIndex(null)}
+            booking={selectedSlotsByDategrid[editModalIndex]}
+            formatTimeRange={formatTimeRange}
+            onSave={(date, newTimes) => {
+              setSelectedSlotsByDate((prev) => ({
+                ...prev,
+                [date]: newTimes.map((t, i) => ({
+                  id: `${date}-${t}-${i}`,
+                  name: t,
+                })),
+              }));
+            }}
+          />
+        )}
+      </div>
     </Container>
   );
 };
