@@ -37,14 +37,13 @@ const RoomDetails = () => {
     console.log('Location state:sfbsdmf', location.state);
   }, [location.state]);
 
-  // Example: fetch slots for today on mount or when roomDetails.id changes
-  // useEffect(() => {
-  //   if (roomDetails?.id) {
-  //     const today = new Date().toISOString().split("T")[0];
-  //     console.log('Fetching available slots for room:', roomDetails.id, 'on date:', today);
-  //     dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: today }));
-  //   }
-  // }, [roomDetails?.id, dispatch]);
+  useEffect(() => {
+    if (roomDetails?.id) {
+      const today = new Date().toISOString().split("T")[0];
+      console.log('Fetching available slots for room:', roomDetails.id, 'on date:', today);
+      dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: today }));
+    }
+  }, [roomDetails?.id, dispatch]);
 
   const mainroom = [
     {
@@ -150,12 +149,7 @@ const RoomDetails = () => {
               roomDetails && roomDetails?.roomImagePath?.length > 0 ?
                 roomDetails?.roomImagePath?.map((room, index) => {
                   const isActive = index === activeIndex;
-                  let imgSrc = URLS.Image_Url + room || noImage;
-                  const handleImageError = () => {
-                    console.log('Image not found, setting to noImage');
-                    imgSrc = noImage;
-                  };
-
+                  let imgSrc = room ? URLS.Image_Url + room : noImage;
                   return (
                     <SwiperSlide
                       key={index}
@@ -180,7 +174,7 @@ const RoomDetails = () => {
                           borderRadius: "16px",
                         }}
                         className={isActive ? "add" : ""}
-                        onError={handleImageError}
+                        onError={() => { imgSrc = noImage; }}
                       />
                     </SwiperSlide>
                   );

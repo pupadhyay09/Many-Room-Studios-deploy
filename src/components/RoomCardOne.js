@@ -30,7 +30,7 @@ const RoomCardOne = ({
           onError={() => setImgSrc(noImage)}
         />
 
-        {discountPercentage && <span className="room-offer">{discountPercentage}% off</span>}
+        {/* {discountPercentage && <span className="room-offer">{discountPercentage}% off</span>} */}
         <span className="room-price">From: ${hourlyPrice}/hour</span>
         <button className="play-btn" onClick={() => onPlayClick(imgSrc)}>
           <RiImageAiFill size={25} />

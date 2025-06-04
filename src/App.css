@@ -308,7 +308,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin-top: 5rem;
+  margin-top: 1rem;
 }
 
 .submit-btn-form {
@@ -687,7 +687,7 @@
   justify-content: space-between;
 }
 
-.set-table-btn button{
+.set-table-btn button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -734,7 +734,7 @@
 }
 
 .table-responsive {
-  height: 400px;
+  max-height: 400px;
   overflow-y: scroll;
 }
 
