@@ -11,17 +11,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { getAvailableSlots } from "../redux/slices/rooms";
 
-function to12HourFormat(time24) {
-  const [hour, minute] = time24.split(":").map(Number);
-  const ampm = hour >= 12 ? "PM" : "AM";
-  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-  return `${hour12}:${minute.toString().padStart(2, "0")} ${ampm}`;
-}
 
 const BookingCalendar = ({ availableSlots }) => {
   const location = useLocation();
   const [step, setStep] = useState(1);
-  const [selectedDates, setSelectedDates] = useState([]);
+  const [selectedDates, setSelectedDates] = useState([]); // Make it an array
+  const [selectedSlotsByDate, setSelectedSlotsByDate] = useState({}); // { '2025-06-04': [slotId1, slotId2] }
+  const [currentDate, setCurrentDate] = useState(null); // Currently clicked date to show slots
   const [selectedTime, setSelectedTime] = useState([]);
   const [endTime, setEndTime] = useState("");
   const [people, setPeople] = useState("");
@@ -33,43 +29,59 @@ const BookingCalendar = ({ availableSlots }) => {
   const { roomDetails } = useSelector((state) => state.rooms);
   const dispatch = useDispatch();
 
-  const timeOptions = Array.isArray(availableSlots)
-    ? availableSlots.map((slot) => slot.name.padStart(2, "0") + ":00")
-    : [];
-
-  const handleDateSelect = (date) => {
-    let updatedDates = [...selectedDates];
-    const exists = updatedDates.some(
-      (d) => d.toDateString() === date.toDateString()
-    );
-
-    if (exists) {
-      updatedDates = updatedDates.filter(
-        (d) => d.toDateString() !== date.toDateString()
-      );
-    } else {
-      if (updatedDates.length >= 90) return;
-      updatedDates.push(date);
-    }
-
-    setSelectedDates(updatedDates);
-    goToStep(2);
+  const formatDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
-  const handleTimeSelect = (time) => {
-    setSelectedTime((prev) => {
-      if (prev.includes(time)) {
-        return prev.filter((t) => t !== time);
+  const to12HourFormat = (time24) => {
+    const [hour, minute] = time24.split(":").map(Number);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12}:${minute.toString().padStart(2, "0")} ${ampm}`;
+  }
+
+  const formatTimeRange = (range) => {
+    const [start, end] = range.split('-');
+    return `${to12HourFormat(start)} - ${to12HourFormat(end)}`;
+  };
+
+  const handleDateSelect = async (date) => {
+    if (roomDetails?.id) {
+      const dateKey = formatDate(date);
+      await dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: dateKey }));
+    }
+    setCurrentDate(date);
+  };
+
+  const handleTimeSelect = (dateKey, slot) => {
+    setSelectedSlotsByDate((prev) => {
+      const prevSlots = prev[dateKey] || [];
+      const isAlreadySelected = prevSlots.some((s) => s.id === slot.id);
+      const updatedSlots = isAlreadySelected
+        ? prevSlots.filter((s) => s.id !== slot.id) // Deselect
+        : [...prevSlots, slot]; // Select
+
+      const newSelectedSlots = { ...prev, [dateKey]: updatedSlots };
+
+      if (updatedSlots.length === 0) {
+        delete newSelectedSlots[dateKey];
+        setSelectedDates((prevDates) => prevDates.filter((d) => formatDate(d) !== dateKey));
       } else {
-        return [...prev, time];
+        setSelectedDates((prevDates) => {
+          const isDateSelected = prevDates.some((d) => formatDate(d) === dateKey);
+          return isDateSelected ? prevDates : [...prevDates, new Date(dateKey)];
+        });
       }
+
+      return newSelectedSlots;
     });
   };
 
   const handleNext = () => {
-   if (selectedTime.length > 0) {
-  goToStep(3);
-}
+    goToStep(3);
   };
 
   const goBack = () => {
@@ -90,47 +102,6 @@ const BookingCalendar = ({ availableSlots }) => {
     setStep(visibleStep);
   }, [visibleStep]);
 
-  useEffect(() => {
-    const preFeildData = localStorage.getItem("bookingFormData");
-    if (preFeildData) {
-      const formData = JSON.parse(preFeildData);
-      setStep(3);
-      if (formData.date) {
-        setSelectedDates([new Date(formData.date + "T00:00:00Z")]);
-      }
-      if (formData.startTime) {
-        let start = formData.startTime;
-        if (start.length > 5 && start.includes("T")) {
-          start = start.split("T")[1].slice(0, 5);
-        }
-        setSelectedTime(start);
-      }
-      if (formData.endTime) {
-        let end = formData.endTime;
-        if (end.length > 5 && end.includes("T")) {
-          end = end.split("T")[1].slice(0, 5);
-        }
-        setEndTime(end);
-      }
-      if (formData.people) setPeople(formData.people);
-      if (formData.eventType) setEventType(formData.eventType);
-    }
-  }, [location]);
-
-  useEffect(() => {
-    if (selectedDates.length > 0 && roomDetails?.id) {
-      selectedDates.forEach((date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        const formatted = `${year}-${month}-${day}`;
-        dispatch(
-          getAvailableSlots({ id: roomDetails.id, bookingDate: formatted })
-        );
-      });
-    }
-  }, [selectedDates, roomDetails?.id, dispatch]);
-
   const handleChange = (setter, field) => (e) => {
     setter(e.target.value);
     setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -140,11 +111,15 @@ const BookingCalendar = ({ availableSlots }) => {
     e.preventDefault();
     let newErrors = {};
 
-    if (!selectedTime) newErrors.selectedTime = "Start time is required.";
-    if (!endTime) newErrors.endTime = "End time is required.";
-    if (!people) newErrors.people = "Number of people is required.";
-    if (selectedDates.length === 0)
+    if (!selectedDates || selectedDates.length === 0)
       newErrors.selectedDate = "Please select at least one date.";
+
+    const missingTimes = selectedDates.some(
+      (date) => !selectedSlotsByDate[formatDate(date)]
+    );
+    if (missingTimes) newErrors.selectedTime = "Please select time for each date.";
+
+    if (!people) newErrors.people = "Number of people is required.";
     if (Number(people) > Number(roomDetails?.capacity)) {
       newErrors.people = `Number of people cannot exceed room capacity (${roomDetails?.capacity})`;
     }
@@ -157,14 +132,29 @@ const BookingCalendar = ({ availableSlots }) => {
     );
     const eventTypeName = eventTypeObj ? eventTypeObj.text : "";
 
+    const bookingSlotList = selectedDates.flatMap((date) => {
+      const dateKey = formatDate(date);
+      const slots = selectedSlotsByDate[dateKey] || [];
+
+      return slots.map((slot) => {
+        const [start, end] = slot.name.split("-");
+        const startDate = new Date(`${dateKey}T${start}:00`);
+        const endDate = new Date(`${dateKey}T${end}:00`);
+        return {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          roomSlotID: slot.id,
+        };
+      });
+    });
+
     const bookingFormData = {
       roomID: roomDetails?.id,
-      startTime: `${formatDate(selectedDates[0])}T${selectedTime}:00.000Z`,
-      endTime: `${formatDate(selectedDates[0])}T${endTime}:00.000Z`,
-      eventTypeName,
+      dates: bookingSlotList,
+      gridDates: selectedSlotsByDate,
       people: Number(people),
       eventType,
-      date: formatDate(selectedDates[0]),
+      eventTypeName,
       franchiseeAdminID: roomDetails?.franchiseeAdminID,
       roomImagePath: roomDetails?.roomImagePath,
       roomName: roomDetails?.roomName,
@@ -177,13 +167,6 @@ const BookingCalendar = ({ availableSlots }) => {
 
     localStorage.setItem("bookingFormData", JSON.stringify(bookingFormData));
     navigate("/booking", { state: bookingFormData });
-  };
-
-  const formatDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
   };
 
   return (
@@ -223,6 +206,7 @@ const BookingCalendar = ({ availableSlots }) => {
             <div className="date-time-container d-flex">
               <div className="custom-booking-datepicker">
                 <h4 className="ms-3">Select Dates</h4>
+
                 <DatePicker
                   selected={null}
                   onChange={handleDateSelect}
@@ -257,37 +241,37 @@ const BookingCalendar = ({ availableSlots }) => {
               <div
                 className={`fade-step w-100 ${transitioning ? "fade-out" : ""}`}
               >
-                {selectedDates.length > 0 && (
+                {currentDate && (
                   <div className="time-select-wrapper">
+                    <h5 className="mb-2">{formatDate(currentDate)} - Select Time Slots</h5>
                     <div className="time-grid time-grid-scrollable">
-                      {timeOptions.map((time) => {
-                        const isSelected = selectedTime.includes(time);
+                      {availableSlots.map((slot) => {
+                        const dateKey = formatDate(currentDate);
+                        const isSelected = selectedSlotsByDate[dateKey]?.some((s) => s.id === slot.id);
+
                         return (
-                          <div key={time}>
-                            <Button
-                              variant={
-                                isSelected ? "primary" : "outline-primary"
-                              }
-                              className="time-btn py-3 w-100 mb-2"
-                              onClick={() => handleTimeSelect(time)}
-                            >
-                              {to12HourFormat(time)}
-                            </Button>
-                          </div>
+                          <Button
+                            key={slot.id}
+                            variant={isSelected ? "primary" : "outline-primary"}
+                            className="time-btn py-3 w-100 mb-2"
+                            onClick={() => handleTimeSelect(dateKey, slot)}
+                          >
+                            {formatTimeRange(slot.name)}
+                          </Button>
                         );
                       })}
                     </div>
-                    <div className="d-flex justify-content-end mt-3">
-                      {selectedTime.length > 0 && (
-                        <Button
-                          onClick={handleNext}
-                          className="next-btn py-3 w-100 me-4"
-                          variant="success"
-                        >
-                          Next <GrFormNextLink />
-                        </Button>
-                      )}
-                    </div>
+                  </div>
+                )}
+                {selectedSlotsByDate && Object.keys(selectedSlotsByDate).length > 0 && (
+                  <div className="d-flex justify-content-end mt-3">
+                    <Button
+                      onClick={handleNext}
+                      className="next-btn py-3 w-100 me-4"
+                      variant="success"
+                    >
+                      Next <GrFormNextLink />
+                    </Button>
                   </div>
                 )}
               </div>
@@ -297,7 +281,7 @@ const BookingCalendar = ({ availableSlots }) => {
           {step === 3 && (
             <Form className="form-grid" onSubmit={handleSubmit}>
               <Row className="justify-content-between">
-                <Col md={5}>
+                {/* <Col md={5}>
                   <Form.Group className="mb-4">
                     <Form.Label>Start Time</Form.Label>
                     <Form.Select
@@ -309,7 +293,7 @@ const BookingCalendar = ({ availableSlots }) => {
                       }}
                     >
                       <option value="">Select Start Time</option>
-                      {timeOptions.map((time) => (
+                      {availableSlots.map((time) => (
                         <option key={time} value={time}>
                           {to12HourFormat(time)}
                         </option>
@@ -336,7 +320,7 @@ const BookingCalendar = ({ availableSlots }) => {
                     >
                       <option value="">Select End Time</option>
                       {selectedTime &&
-                        timeOptions
+                        availableSlots
                           .filter((time) => time > selectedTime)
                           .map((time) => (
                             <option key={time} value={time}>
@@ -348,7 +332,7 @@ const BookingCalendar = ({ availableSlots }) => {
                       <div className="text-danger mt-1">{errors.endTime}</div>
                     )}
                   </Form.Group>
-                </Col>
+                </Col> */}
 
                 <Col md={5}>
                   <Form.Group className="mb-4">
@@ -403,8 +387,8 @@ const BookingCalendar = ({ availableSlots }) => {
                       value={
                         selectedDates.length > 0
                           ? selectedDates
-                              .map((d) => d.toDateString())
-                              .join(", ")
+                            .map((d) => d.toDateString())
+                            .join(", ")
                           : ""
                       }
                       readOnly

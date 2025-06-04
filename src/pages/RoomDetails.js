@@ -38,13 +38,13 @@ const RoomDetails = () => {
   }, [location.state]);
 
   // Example: fetch slots for today on mount or when roomDetails.id changes
-  useEffect(() => {
-    if (roomDetails?.id) {
-      const today = new Date().toISOString().split("T")[0];
-      console.log('Fetching available slots for room:', roomDetails.id, 'on date:', today);
-      dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: today }));
-    }
-  }, [roomDetails?.id, dispatch]);
+  // useEffect(() => {
+  //   if (roomDetails?.id) {
+  //     const today = new Date().toISOString().split("T")[0];
+  //     console.log('Fetching available slots for room:', roomDetails.id, 'on date:', today);
+  //     dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: today }));
+  //   }
+  // }, [roomDetails?.id, dispatch]);
 
   const mainroom = [
     {
