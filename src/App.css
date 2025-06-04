@@ -450,7 +450,7 @@
 
 .room-image {
   width: 100%;
-  height: auto;
+  height: 450px;
   display: block;
 }
 
@@ -648,10 +648,10 @@
 }
 
 .time-grid-scrollable {
-    max-height: 350px; /* Adjust to match calendar height */
-    overflow-y: auto;
-    padding-right: 8px;
-} 
+  max-height: 450px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
 
 .react-datepicker__input-container input:focus {
   outline: none !important;
@@ -675,7 +675,11 @@
   width: 100% !important;
 }
 
-
+.selected-multi {
+    background-color: #007bff;
+    color: white;
+    border-radius: 50%;
+}
 
 @media only screen and (max-width: 1210px) {
   .date-time-container {
@@ -701,6 +705,12 @@
     bottom: 5% !important;
     max-width: 45% !important;
     left: 30% !important;
+  }
+}
+
+@media only screen and (max-width: 992px) {
+  .room-image {
+    width: auto;
   }
 }
 
@@ -781,5 +791,4 @@
   .custom-next {
     bottom: 5% !important;
   }
-
 }
