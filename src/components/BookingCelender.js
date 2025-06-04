@@ -13,15 +13,16 @@ import { getAvailableSlots } from "../redux/slices/rooms";
 import { FaEdit, FaTrash, FaSave } from "react-icons/fa";
 import TimeEditModal from "./TimeEditModal";
 
+
 const BookingCalendar = ({ availableSlots }) => {
-  const location = useLocation();
   const [step, setStep] = useState(1);
   const [selectedDates, setSelectedDates] = useState([]); // Make it an array
   const [selectedSlotsByDate, setSelectedSlotsByDate] = useState({}); // { '2025-06-04': [slotId1, slotId2] }
   const [currentDate, setCurrentDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState([]);
   const [endTime, setEndTime] = useState("");
-  const [people, setPeople] = useState("");
+  const [currentDate, setCurrentDate] = useState(null); // Currently clicked date to show slots
+ const [people, setPeople] = useState("");
   const [eventType, setEventType] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
   const [visibleStep, setVisibleStep] = useState(1);
@@ -39,6 +40,8 @@ const BookingCalendar = ({ availableSlots }) => {
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
+
+
   const to12HourFormat = (time24) => {
     const [hour, minute] = time24.split(":").map(Number);
     const ampm = hour >= 12 ? "PM" : "AM";
@@ -56,7 +59,18 @@ const BookingCalendar = ({ availableSlots }) => {
       await dispatch(
         getAvailableSlots({ id: roomDetails.id, bookingDate: dateKey })
       );
-    }
+  }
+
+  const formatTimeRange = (range) => {
+    const [start, end] = range.split('-');
+    return `${to12HourFormat(start)} - ${to12HourFormat(end)}`;
+  };
+
+  const handleDateSelect = async (date) => {
+    if (roomDetails?.id) {
+      const dateKey = formatDate(date);
+      await dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: dateKey }));
+ }
     setCurrentDate(date);
   };
 
@@ -72,7 +86,7 @@ const BookingCalendar = ({ availableSlots }) => {
 
       if (updatedSlots.length === 0) {
         delete newSelectedSlots[dateKey];
-        setSelectedDates((prevDates) =>
+   setSelectedDates((prevDates) =>
           prevDates.filter((d) => formatDate(d) !== dateKey)
         );
       } else {
@@ -80,7 +94,11 @@ const BookingCalendar = ({ availableSlots }) => {
           const isDateSelected = prevDates.some(
             (d) => formatDate(d) === dateKey
           );
-          return isDateSelected ? prevDates : [...prevDates, new Date(dateKey)];
+   setSelectedDates((prevDates) => prevDates.filter((d) => formatDate(d) !== dateKey));
+      } else {
+        setSelectedDates((prevDates) => {
+          const isDateSelected = prevDates.some((d) => formatDate(d) === dateKey);
+  return isDateSelected ? prevDates : [...prevDates, new Date(dateKey)];
         });
       }
 
@@ -141,7 +159,10 @@ const BookingCalendar = ({ availableSlots }) => {
       return updated;
     });
     setSelectedDates((prev) => prev.filter((d) => formatDate(d) !== dateKey));
-  };
+  const handleChange = (setter, field) => (e) => {
+    setter(e.target.value);
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+> };
 
   const chunkArray = (arr, size) => {
     const chunks = [];
@@ -160,8 +181,9 @@ const BookingCalendar = ({ availableSlots }) => {
     const missingTimes = selectedDates.some(
       (date) => !selectedSlotsByDate[formatDate(date)]
     );
-    if (missingTimes)
+ if (missingTimes)
       newErrors.selectedTime = "Please select time for each date.";
+  if (missingTimes) newErrors.selectedTime = "Please select time for each date.";
 
     if (!people) newErrors.people = "Number of people is required.";
     if (Number(people) > Number(roomDetails?.capacity)) {
@@ -179,34 +201,55 @@ const BookingCalendar = ({ availableSlots }) => {
     const bookingSlotList = selectedDates.flatMap((date) => {
       const dateKey = formatDate(date);
       const slots = selectedSlotsByDate[dateKey] || [];
-
-      return slots.map((slot) => {
+ return slots.map((slot) => {
         const [start, end] = slot.name.split("-");
         const startDate = new Date(`${dateKey}T${start}:00`);
         const endDate = new Date(`${dateKey}T${end}:00`);
         return {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
-          roomSlotID: slot.id,
+  return slots.map((slot) => {
+        const [start, end] = slot.name.split("-");
+        const startDate = `${formatDate(date)}T${start}:00.000Z`;
+        const endDate = `${formatDate(date)}T${end}:00.000Z`;
+
+        return {
+          startDate: startDate,
+          endDate: endDate,
+ roomSlotID: slot.id,
         };
       });
     });
 
-    const bookingFormData = {
+  const allStartDates = bookingSlotList.map((s) => new Date(s.startDate));
+    const allEndDates = bookingSlotList.map((s) => new Date(s.endDate));
+
+    const startDateTime = new Date(Math.min(...allStartDates)).toISOString();
+    const endDateTime = new Date(Math.max(...allEndDates)).toISOString();
+
+   const bookingFormData = {
+      franchiseeAdminID: roomDetails?.franchiseeAdminID,
       roomID: roomDetails?.id,
-      dates: bookingSlotList,
+   dates: bookingSlotList,
       gridDates: selectedSlotsByDate,
       people: Number(people),
       eventType,
       eventTypeName,
       franchiseeAdminID: roomDetails?.franchiseeAdminID,
-      roomImagePath: roomDetails?.roomImagePath,
+   bookingSlotList,
+      startDateTime,
+      endDateTime,
+      people: Number(people),
+      eventType,
+      eventTypeName,
+   roomImagePath: roomDetails?.roomImagePath,
       roomName: roomDetails?.roomName,
       location: roomDetails?.location,
       hourlyPrice: roomDetails?.hourlyPrice,
       discountPercentage: roomDetails?.discountPercentage,
       taxes: roomDetails?.vatPercentage,
-      ownership: roomDetails.ownershipTypeName,
+      ownership: roomDetails?.ownershipTypeName,
+      gridbookingSlotListByDate: selectedSlotsByDate,
     };
 
     localStorage.setItem("bookingFormData", JSON.stringify(bookingFormData));
@@ -214,7 +257,6 @@ const BookingCalendar = ({ availableSlots }) => {
   };
 
   console.log("selectedSlotsByDate===>", selectedSlotsByDate);
-
   const selectedSlotsByDategrid = Object.entries(selectedSlotsByDate).map(
     ([date, slots]) => ({
       date,
@@ -261,6 +303,7 @@ const BookingCalendar = ({ availableSlots }) => {
             <div className="date-time-container d-flex">
               <div className="custom-booking-datepicker">
                 <h4 className="ms-3">Select Dates</h4>
+
                 <DatePicker
                   selected={null}
                   onChange={handleDateSelect}
@@ -297,14 +340,14 @@ const BookingCalendar = ({ availableSlots }) => {
               >
                 {currentDate && (
                   <div className="time-select-wrapper">
+                    <h5 className="mb-2">{formatDate(currentDate)} - Select Time Slots</h5>
                     <div className="time-grid time-grid-scrollable">
                       {availableSlots.map((slot) => {
                         const dateKey = formatDate(currentDate);
-                        const isSelected = selectedSlotsByDate[dateKey]?.some(
+   const isSelected = selectedSlotsByDate[dateKey]?.some(
                           (s) => s.id === slot.id
-                        );
-
-                        return (
+   const isSelected = selectedSlotsByDate[dateKey]?.some((s) => s.id === slot.id);
+ return (
                           <Button
                             key={slot.id}
                             variant={isSelected ? "primary" : "outline-primary"}
@@ -316,7 +359,18 @@ const BookingCalendar = ({ availableSlots }) => {
                         );
                       })}
                     </div>
-                  </div>
+  </div>
+                )}
+                {selectedSlotsByDate && Object.keys(selectedSlotsByDate).length > 0 && (
+                  <div className="d-flex justify-content-end mt-3">
+                    <Button
+                      onClick={handleNext}
+                      className="next-btn py-3 w-100 me-4"
+                      variant="success"
+                    >
+                      Next <GrFormNextLink />
+                    </Button>
+   </div>
                 )}
                 {selectedSlotsByDate &&
                   Object.keys(selectedSlotsByDate).length > 0 && (
@@ -337,7 +391,7 @@ const BookingCalendar = ({ availableSlots }) => {
           {step === 3 && (
             <Form className="form-grid" onSubmit={handleSubmit}>
               <Row className="justify-content-between">
-                <Col lg={12}>
+  <Col lg={12}>
                   <h5 className="mb-3">Booking Summary</h5>
                   <div className="table-responsive">
                     <table className="table table-bordered table-striped">
@@ -401,7 +455,126 @@ const BookingCalendar = ({ availableSlots }) => {
                     </table>
                   </div>
                 </Col>
-              </Row>
+   {/* <Col md={5}>
+                  <Form.Group className="mb-4">
+                    <Form.Label>Start Time</Form.Label>
+                    <Form.Select
+                      value={selectedTime}
+                      onChange={(e) => {
+                        setSelectedTime(e.target.value);
+                        setEndTime("");
+                        setErrors((prev) => ({ ...prev, selectedTime: "" }));
+                      }}
+                    >
+                      <option value="">Select Start Time</option>
+                      {availableSlots.map((time) => (
+                        <option key={time} value={time}>
+                          {to12HourFormat(time)}
+                        </option>
+                      ))}
+                    </Form.Select>
+                    {errors.selectedTime && (
+                      <div className="text-danger mt-1">
+                        {errors.selectedTime}
+                      </div>
+                    )}
+                  </Form.Group>
+                </Col>
+
+                <Col md={5}>
+                  <Form.Group className="mb-4">
+                    <Form.Label>End Time</Form.Label>
+                    <Form.Select
+                      value={endTime}
+                      onChange={(e) => {
+                        setEndTime(e.target.value);
+                        setErrors((prev) => ({ ...prev, endTime: "" }));
+                      }}
+                      disabled={!selectedTime}
+                    >
+                      <option value="">Select End Time</option>
+                      {selectedTime &&
+                        availableSlots
+                          .filter((time) => time > selectedTime)
+                          .map((time) => (
+                            <option key={time} value={time}>
+                              {to12HourFormat(time)}
+                            </option>
+                          ))}
+                    </Form.Select>
+                    {errors.endTime && (
+                      <div className="text-danger mt-1">{errors.endTime}</div>
+                    )}
+                  </Form.Group>
+                </Col> */}
+
+                <Col md={5}>
+                  <Form.Group className="mb-4">
+                    <Form.Label>
+                      Number of People max({roomDetails?.capacity})
+                    </Form.Label>
+                    <Form.Control
+                      placeholder="Number"
+                      type="number"
+                      value={people}
+                      max={roomDetails?.capacity?.toString()}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        if (
+                          roomDetails?.capacity &&
+                          Number(val) > Number(roomDetails.capacity)
+                        ) {
+                          val = roomDetails.capacity.toString();
+                        }
+                        setPeople(val);
+                        setErrors((prev) => ({ ...prev, people: "" }));
+                      }}
+                    />
+                    {errors.people && (
+                      <div className="text-danger mt-1">{errors.people}</div>
+                    )}
+                  </Form.Group>
+                </Col>
+
+                <Col md={5}>
+                  <Form.Group className="mb-4">
+                    <Form.Label>Event Type</Form.Label>
+                    <Form.Select
+                      value={eventType}
+                      onChange={handleChange(setEventType, "eventType")}
+                    >
+                      <option value="">Select</option>
+                      {roomDetails?.roomEventsList?.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.text}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+
+                {/* <Col md={5}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Selected Dates</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={
+                        selectedDates.length > 0
+                          ? selectedDates
+                            .map((d) => d.toDateString())
+                            .join(", ")
+                          : ""
+                      }
+                      readOnly
+                    />
+                    {errors.selectedDate && (
+                      <div className="text-danger mt-1">
+                        {errors.selectedDate}
+                      </div>
+                    )}
+                  </Form.Group>
+                </Col> */}
+    </Row>
 
               <div className="form-btn-text">
                 <p className="text-center">
