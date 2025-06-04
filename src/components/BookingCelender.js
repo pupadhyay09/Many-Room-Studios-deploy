@@ -216,7 +216,7 @@ const BookingCalendar = ({ availableSlots }) => {
     ([date, slots]) => ({
       date,
       startTimes: slots.map((slot) => slot.name),
-      qty: slots.length,
+      qty: slots,
       unit: roomDetails?.hourlyPrice?.toFixed(2), // or your actual unit if dynamic
       price: (slots.length * roomDetails?.hourlyPrice)?.toFixed(2), // Example logic
     })
@@ -416,7 +416,7 @@ const BookingCalendar = ({ availableSlots }) => {
                                 ))}
                               </div>
                             </td>
-                            <td>{booking.qty}</td>
+                            <td>{booking.qty.length}</td>
                             <td>£{booking.unit}</td>
                             <td>£{booking.price}</td>
                             <td>
@@ -485,9 +485,6 @@ const BookingCalendar = ({ availableSlots }) => {
             onHide={() => setEditModalIndex(null)}
             formatTimeRange={formatTimeRange}
             availableSlots={availableSlots}
-            selectedSlots={
-              selectedSlotsByDate[editModalIndex] || []
-            }
             onChange={(date, slot) => {
               handleTimeSelect(date, slot);
             }}

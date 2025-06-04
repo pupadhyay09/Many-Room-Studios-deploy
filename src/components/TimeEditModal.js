@@ -5,28 +5,10 @@ const TimeEditModal = ({
   show,
   onHide,
   onChange,
-  onSave,
   booking,
   formatTimeRange,
   availableSlots,
-  selectedSlots = [],
 }) => {
-  const [selectedTimes, setSelectedTimes] = useState(booking.startTimes || []);
-
-  const handleTimeToggle = (time) => {
-    setSelectedTimes((prev) =>
-      prev.includes(time)
-        ? prev.filter((t) => t !== time)
-        : [...prev, time]
-    );
-  };
-
-  const handleSave = () => {
-    onSave(booking.date, selectedTimes);
-    onHide();
-  };
-  console.log("selectedSlots", selectedSlots);
-
   return (
     <Modal show={show} onHide={onHide} centered size="md">
       <Modal.Header closeButton>
@@ -35,7 +17,7 @@ const TimeEditModal = ({
       <Modal.Body>
         <div className="d-flex flex-wrap gap-2">
           {availableSlots.map((slot) => {
-            const isSelected = selectedSlots.some((s) => s.id === slot.id);
+            const isSelected = booking?.qty?.some((s) => s.id === slot.id);
             return (
               <Button
                 key={slot.id}
@@ -48,14 +30,6 @@ const TimeEditModal = ({
           })}
         </div>
       </Modal.Body>
-      {/* <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>
-          Cancel
-        </Button>
-        <Button variant="success" onClick={handleSave}>
-          Save Changes
-        </Button>
-      </Modal.Footer> */}
     </Modal>
   );
 };
