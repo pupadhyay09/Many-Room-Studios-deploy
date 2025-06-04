@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Col, Container, Row, Form, Button } from "react-bootstrap";
+import { Col, Container, Card, Row, Form, Button } from "react-bootstrap";
 import images from "../assets/images/Images";
 import { IoLocationSharp } from "react-icons/io5";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -7,18 +7,20 @@ import { useDispatch, useSelector } from "react-redux";
 import { roomBooking } from "../redux/slices/rooms";
 import { URLS } from "../api/Urls";
 import noImage from '../assets/images/noimage.png';
+import moment from "moment";
 
-function to12HourFormat(timeStr) {
-  // timeStr: "2025-05-28T13:00:00.000Z" or "13:00"
-  let time = timeStr;
-  if (timeStr.includes("T")) {
-    time = timeStr.split("T")[1].substring(0, 5); // "13:00"
-  }
-  const [hour, minute] = time.split(":").map(Number);
+
+const to12HourFormat = (time24) => {
+  const [hour, minute] = time24.split(":").map(Number);
   const ampm = hour >= 12 ? "PM" : "AM";
   const hour12 = hour % 12 === 0 ? 12 : hour % 12;
   return `${hour12}:${minute.toString().padStart(2, "0")} ${ampm}`;
-}
+};
+
+const formatTimeRange = (range) => {
+  const [start, end] = range.split("-");
+  return `${to12HourFormat(start)} - ${to12HourFormat(end)}`;
+};
 
 function isValidEmail(email) {
   // Simple email regex
@@ -117,13 +119,24 @@ const Booking = () => {
   const hourlyPrice = Number(bookingFormData?.hourlyPrice) || 0;
   const taxesPercentage = Number(bookingFormData?.taxes) || 0; // taxes as percentage
   const discountPercentage = Number(bookingFormData?.discountPercentage) || 0;
-  const hours = getHourDiff(bookingFormData.startTime, bookingFormData.endTime);
+  const hours = bookingFormData?.bookingSlotList?.length;
 
   const roomCost = +(hourlyPrice * hours).toFixed(2);
   // Both discount and taxes are calculated on base price (roomCost)
   const discount = +((roomCost * discountPercentage) / 100).toFixed(2);
   const taxes = +((roomCost * taxesPercentage) / 100).toFixed(2);
   const total = +(roomCost - discount + taxes).toFixed(2);
+
+  const selectedSlotsByDategrid = Object.entries(bookingFormData?.gridbookingSlotListByDate).map(
+    ([date, slots]) => ({
+      date,
+      startTimes: slots.map((slot) => slot.name),
+      qty: slots,
+      unit: bookingFormData?.hourlyPrice?.toFixed(2), // or your actual unit if dynamic
+      price: (slots.length * bookingFormData?.hourlyPrice)?.toFixed(2), // Example logic
+    })
+  );
+
 
   return (
     <Container className="bookingbg">
@@ -322,8 +335,70 @@ const Booking = () => {
             <h5 className="mb-3 border-bottom pb-2 fw-bold">
               YOUR BOOKING DETAILS
             </h5>
+            <Container className="table-responsive">
+              {selectedSlotsByDategrid?.map((booking) => (
+                <Card className="mb-3 shadow-sm" key={booking.date}>
+                  <Card.Header>
+                    📅 {moment(booking.date).format("DD MMMM YYYY")}
+                  </Card.Header>
+                  <Card.Body>
+                    <Row>
+                      {booking.startTimes.map((time, index) => (
+                        <Col key={index} md={12} className="mb-2">
+                          <div className="p-2 border rounded bg-light">
+                            🕒  {formatTimeRange(time)}
+                          </div>
+                        </Col>
+                      ))}
+                    </Row>
+                  </Card.Body>
+                </Card>
+              ))}
+            </Container>
+            {/* <Col lg={12}>
+              <div className="table-responsive">
+                <table className="table table-bordered table-striped">
+                  <thead className="table-dark">
+                    <tr>
+                      <th>Date</th>
+                      <th>Time</th>
+                      <th>Qty</th>
+                      <th>Unit</th>
+                      <th>Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedSlotsByDategrid.map((booking, index) => (
+                      <tr key={index}>
+                        <td>{booking.date}</td>
+                        <td>
+                          <div
+                            style={{
+                              maxHeight: "37px",
+                              overflowY: "auto",
+                            }}
+                            className="time-scroll-wrapper"
+                          >
+                            {booking.startTimes.map((time, index) => (
+                              <div key={index} className="mb-1">
+                                <span className="py-1 text-nowrap d-inline-block w-100">
+                                  {formatTimeRange(time)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                        <td>{booking.qty.length}</td>
+                        <td>£{booking.unit}</td>
+                        <td>£{booking.price}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Col> */}
 
-            <div className="mb-2">
+            {/* <div className="mb-2">
               <strong>Check in</strong>
               <div className="numbertext">
                 {bookingFormData.date
@@ -358,7 +433,7 @@ const Booking = () => {
                     : "--"}
                 </div>
               </div>
-            </div>
+            </div> */}
 
             <div className="d-flex justify-content-between mb-2">
               <div>
@@ -381,31 +456,31 @@ const Booking = () => {
 
             <h6 className="mb-3 fw-bold">CHARGES</h6>
             <div className="d-flex justify-content-between mb-2">
-              <span>Hourly Price</span>
-              <span className="pricetext">£ {hourlyPrice.toLocaleString()}</span>
+              <span>Slot Price</span>
+              <span className="pricetext">£ {hourlyPrice.toFixed(2)}</span>
             </div>
             <div className="d-flex justify-content-between mb-2">
-              <span>Duration</span>
-              <span className="pricetext">{hours.toFixed(2)} hour(s)</span>
+              <span>Slots Qty</span>
+              <span className="pricetext">{hours.toString()}</span>
             </div>
             <div className="d-flex justify-content-between mb-2">
               <span>Room Cost</span>
-              <span className="pricetext">£ {roomCost.toLocaleString()}</span>
+              <span className="pricetext">£ {roomCost.toFixed(2)}</span>
             </div>
             {discountPercentage > 0 && (
               <div className="d-flex justify-content-between mb-2">
                 <span>Discount ({discountPercentage}%)</span>
-                <span className="pricetext text-success">-£ {discount.toLocaleString()}</span>
+                <span className="pricetext text-success">-£ {discount.toFixed(2)}</span>
               </div>
             )}
             <div className="d-flex justify-content-between mb-2">
               <span>Taxes & Fees ({taxesPercentage}%)</span>
-              <span className="pricetext">£ {taxes.toLocaleString()}</span>
+              <span className="pricetext">£ {taxes.toFixed(2)}</span>
             </div>
             <hr />
             <div className="d-flex justify-content-between mb-4">
               <strong>GRAND TOTAL</strong>
-              <strong className="pricetext">£ {total.toLocaleString()}</strong>
+              <strong className="pricetext">£ {total.toFixed(2)}</strong>
             </div>
 
             <Button
