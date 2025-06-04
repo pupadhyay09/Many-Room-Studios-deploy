@@ -13,13 +13,10 @@ import { getAvailableSlots } from "../redux/slices/rooms";
 
 
 const BookingCalendar = ({ availableSlots }) => {
-  const location = useLocation();
   const [step, setStep] = useState(1);
   const [selectedDates, setSelectedDates] = useState([]); // Make it an array
   const [selectedSlotsByDate, setSelectedSlotsByDate] = useState({}); // { '2025-06-04': [slotId1, slotId2] }
   const [currentDate, setCurrentDate] = useState(null); // Currently clicked date to show slots
-  const [selectedTime, setSelectedTime] = useState([]);
-  const [endTime, setEndTime] = useState("");
   const [people, setPeople] = useState("");
   const [eventType, setEventType] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
@@ -135,39 +132,48 @@ const BookingCalendar = ({ availableSlots }) => {
     const bookingSlotList = selectedDates.flatMap((date) => {
       const dateKey = formatDate(date);
       const slots = selectedSlotsByDate[dateKey] || [];
-
       return slots.map((slot) => {
         const [start, end] = slot.name.split("-");
-        const startDate = new Date(`${dateKey}T${start}:00`);
-        const endDate = new Date(`${dateKey}T${end}:00`);
+        const startDate = `${formatDate(date)}T${start}:00.000Z`;
+        const endDate = `${formatDate(date)}T${end}:00.000Z`;
+
         return {
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
+          startDate: startDate,
+          endDate: endDate,
           roomSlotID: slot.id,
         };
       });
     });
 
+    const allStartDates = bookingSlotList.map((s) => new Date(s.startDate));
+    const allEndDates = bookingSlotList.map((s) => new Date(s.endDate));
+
+    const startDateTime = new Date(Math.min(...allStartDates)).toISOString();
+    const endDateTime = new Date(Math.max(...allEndDates)).toISOString();
+
     const bookingFormData = {
+      franchiseeAdminID: roomDetails?.franchiseeAdminID,
       roomID: roomDetails?.id,
-      dates: bookingSlotList,
-      gridDates: selectedSlotsByDate,
+      bookingSlotList,
+      startDateTime,
+      endDateTime,
       people: Number(people),
       eventType,
       eventTypeName,
-      franchiseeAdminID: roomDetails?.franchiseeAdminID,
       roomImagePath: roomDetails?.roomImagePath,
       roomName: roomDetails?.roomName,
       location: roomDetails?.location,
       hourlyPrice: roomDetails?.hourlyPrice,
       discountPercentage: roomDetails?.discountPercentage,
       taxes: roomDetails?.vatPercentage,
-      ownership: roomDetails.ownershipTypeName,
+      ownership: roomDetails?.ownershipTypeName,
+      gridbookingSlotListByDate: selectedSlotsByDate,
     };
 
     localStorage.setItem("bookingFormData", JSON.stringify(bookingFormData));
     navigate("/booking", { state: bookingFormData });
   };
+
 
   return (
     <Container className="booking-wrapper">
@@ -379,7 +385,7 @@ const BookingCalendar = ({ availableSlots }) => {
                   </Form.Group>
                 </Col>
 
-                <Col md={5}>
+                {/* <Col md={5}>
                   <Form.Group className="mb-3">
                     <Form.Label>Selected Dates</Form.Label>
                     <Form.Control
@@ -399,7 +405,7 @@ const BookingCalendar = ({ availableSlots }) => {
                       </div>
                     )}
                   </Form.Group>
-                </Col>
+                </Col> */}
               </Row>
 
               <div className="form-btn-text">

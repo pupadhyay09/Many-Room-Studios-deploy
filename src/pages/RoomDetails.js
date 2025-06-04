@@ -149,7 +149,6 @@ const RoomDetails = () => {
 
               roomDetails && roomDetails?.roomImagePath?.length > 0 ?
                 roomDetails?.roomImagePath?.map((room, index) => {
-                  console.log('room', room);
                   const isActive = index === activeIndex;
                   let imgSrc = URLS.Image_Url + room || noImage;
                   const handleImageError = () => {
@@ -200,7 +199,7 @@ const RoomDetails = () => {
                     position: "relative",
                   }}
                 >
-                  <img  
+                  <img
                     src={noImage}
                     alt={roomDetails?.roomName}
                     style={{
@@ -209,8 +208,8 @@ const RoomDetails = () => {
                       objectFit: "cover",
                       borderRadius: "16px",
                     }}
-                    className={ "add"}
-                    // onError={handleImageError}
+                    className={"add"}
+                  // onError={handleImageError}
                   />
                 </SwiperSlide>
             }

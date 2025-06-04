@@ -29,10 +29,11 @@ const Booking = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
-  const bookingData = location.state || {};
+  const bookingFormData = location.state || {};
   const [imgSrc, setImgSrc] = useState(
-    bookingData?.roomImagePath?.length > 0 ? URLS.Image_Url + bookingData?.roomImagePath[0] : noImage
+    bookingFormData?.roomImagePath?.length > 0 ? URLS.Image_Url + bookingFormData?.roomImagePath[0] : noImage
   );
+  console.log('Booking Form Data:', bookingFormData);
   // Form state
   const [form, setForm] = useState({
     name: "",
@@ -64,24 +65,25 @@ const Booking = () => {
     if (!form.mobileNo) newErrors.mobileNo = "Phone number is required.";
     if (!form.purposeOfHire) newErrors.purposeOfHire = "Purpose of hire is required.";
     if (!form.termsAndCondition) newErrors.termsAndCondition = "You must accept the terms and conditions.";
-    if (!bookingData.roomID) newErrors.roomID = "Room ID missing.";
+    if (!bookingFormData.roomID) newErrors.roomID = "Room ID missing.";
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) return;
 
     const data = {
-      franchiseeAdminID: bookingData?.franchiseeAdminID,
-      roomEventID: bookingData?.eventType,
-      roomID: bookingData?.roomID,
-      bookingStartDateTime: bookingData?.startTime,
-      bookingEndDateTime: bookingData?.endTime,
-      numberofPeople: bookingData?.people,
+      franchiseeAdminID: bookingFormData?.franchiseeAdminID,
+      roomEventID: bookingFormData?.eventType,
+      roomID: bookingFormData?.roomID,
+      bookingStartDateTime: bookingFormData?.startDateTime,
+      bookingEndDateTime: bookingFormData?.endDateTime,
+      numberofPeople: bookingFormData?.people,
       name: form?.name,
       email: form?.email,
       purposeOfHire: form?.purposeOfHire,
       mobileNo: form?.mobileNo,
       termsAndCondition: form?.termsAndCondition,
+      bookingSlotList: bookingFormData?.bookingSlotList
     };
 
     try {
@@ -112,10 +114,10 @@ const Booking = () => {
     return diffHrs > 0 ? diffHrs : 0;
   }
 
-  const hourlyPrice = Number(bookingData?.hourlyPrice) || 0;
-  const taxesPercentage = Number(bookingData?.taxes) || 0; // taxes as percentage
-  const discountPercentage = Number(bookingData?.discountPercentage) || 0;
-  const hours = getHourDiff(bookingData.startTime, bookingData.endTime);
+  const hourlyPrice = Number(bookingFormData?.hourlyPrice) || 0;
+  const taxesPercentage = Number(bookingFormData?.taxes) || 0; // taxes as percentage
+  const discountPercentage = Number(bookingFormData?.discountPercentage) || 0;
+  const hours = getHourDiff(bookingFormData.startTime, bookingFormData.endTime);
 
   const roomCost = +(hourlyPrice * hours).toFixed(2);
   // Both discount and taxes are calculated on base price (roomCost)
@@ -133,7 +135,7 @@ const Booking = () => {
                 {/* <img src={images.room1} alt="Room" /> */}
                 <img
                   src={imgSrc}
-                  alt={bookingData?.roomName}
+                  alt={bookingFormData?.roomName}
                   className="room-image"
                   onError={() => setImgSrc(noImage)}
                 />
@@ -141,8 +143,8 @@ const Booking = () => {
             </Col>
             <Col md={8} className="setborderbo">
               <div className="bookingheadtext">
-                <h3>{bookingData?.roomName?.toUpperCase()}</h3>
-                {/* <p>{bookingData?.location}</p> */}
+                <h3>{bookingFormData?.roomName?.toUpperCase()}</h3>
+                {/* <p>{bookingFormData?.location}</p> */}
                 {/* <h3>SOHO FARMHOUSE</h3> */}
                 <p>Moscow, Russia</p>
               </div>
@@ -324,8 +326,8 @@ const Booking = () => {
             <div className="mb-2">
               <strong>Check in</strong>
               <div className="numbertext">
-                {bookingData.date
-                  ? new Date(bookingData.date).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "long", day: "numeric" })
+                {bookingFormData.date
+                  ? new Date(bookingFormData.date).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "long", day: "numeric" })
                   : "--"}
               </div>
             </div>
@@ -333,8 +335,8 @@ const Booking = () => {
             <div className="mb-2">
               <strong>Check Out</strong>
               <div className="numbertext">
-                {bookingData.date
-                  ? new Date(bookingData.date).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "long", day: "numeric" })
+                {bookingFormData.date
+                  ? new Date(bookingFormData.date).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "long", day: "numeric" })
                   : "--"}
               </div>
             </div>
@@ -343,16 +345,16 @@ const Booking = () => {
               <div>
                 <strong>Start Time</strong>
                 <div className="numbertext">
-                  {bookingData.startTime
-                    ? to12HourFormat(bookingData.startTime)
+                  {bookingFormData.startTime
+                    ? to12HourFormat(bookingFormData.startTime)
                     : "--"}
                 </div>
               </div>
               <div>
                 <strong>End Time</strong>
                 <div className="numbertext">
-                  {bookingData.endTime
-                    ? to12HourFormat(bookingData.endTime)
+                  {bookingFormData.endTime
+                    ? to12HourFormat(bookingFormData.endTime)
                     : "--"}
                 </div>
               </div>
@@ -362,14 +364,14 @@ const Booking = () => {
               <div>
                 <strong>Attendees</strong>
                 <div className="numbertext">
-                  {bookingData.people ? bookingData.people : "--"}
+                  {bookingFormData.people ? bookingFormData.people : "--"}
                 </div>
               </div>
               <div>
                 <strong>Event Type</strong>
                 <div className="numbertext">
-                  {bookingData.eventTypeName
-                    ? bookingData.eventTypeName
+                  {bookingFormData.eventTypeName
+                    ? bookingFormData.eventTypeName
                     : "N/A"}
                 </div>
               </div>
@@ -412,10 +414,10 @@ const Booking = () => {
               onClick={() => {
                 // navigate(-1, {
                 //   state: {
-                //     ...bookingData,
+                //     ...bookingFormData,
                 //   }
                 // });
-                navigate(-1, { state: bookingData });
+                navigate(-1, { state: bookingFormData });
               }}
             >
               Go Back
