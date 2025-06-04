@@ -308,7 +308,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin-top: 5rem;
+  margin-top: 1rem;
 }
 
 .submit-btn-form {
@@ -450,7 +450,7 @@
 
 .room-image {
   width: 100%;
-  height: auto;
+  height: 450px;
   display: block;
 }
 
@@ -648,10 +648,10 @@
 }
 
 .time-grid-scrollable {
-    max-height: 350px; /* Adjust to match calendar height */
-    overflow-y: auto;
-    padding-right: 8px;
-} 
+  max-height: 450px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
 
 .react-datepicker__input-container input:focus {
   outline: none !important;
@@ -675,6 +675,73 @@
   width: 100% !important;
 }
 
+.selected-multi {
+  background-color: #007bff;
+  color: white;
+  border-radius: 50%;
+}
+
+.set-table-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.set-table-btn button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 45%;
+}
+
+.time-slot-cell {
+  margin: 1rem 0;
+}
+
+
+.custom-time-scroll {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.time-slot-view {
+  max-height: 40px;
+  overflow: hidden;
+  scroll-behavior: smooth;
+  width: 100%;
+}
+
+.time-slot-item {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  background: #f9f9f9;
+  border-radius: 6px;
+}
+
+.scroll-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  user-select: none;
+}
+
+.table-responsive {
+  max-height: 400px;
+  overflow-y: scroll;
+}
+
+.table tbody tr td {
+  font-size: 18px;
+  font-weight: 600;
+}
 
 
 @media only screen and (max-width: 1210px) {
@@ -701,6 +768,12 @@
     bottom: 5% !important;
     max-width: 45% !important;
     left: 30% !important;
+  }
+}
+
+@media only screen and (max-width: 992px) {
+  .room-image {
+    width: auto;
   }
 }
 
@@ -781,5 +854,4 @@
   .custom-next {
     bottom: 5% !important;
   }
-
 }

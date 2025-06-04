@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Col, Container, Row, Form, Button } from "react-bootstrap";
+import { Col, Container, Card, Row, Form, Button } from "react-bootstrap";
 import images from "../assets/images/Images";
 import { IoLocationSharp } from "react-icons/io5";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -7,18 +7,20 @@ import { useDispatch, useSelector } from "react-redux";
 import { roomBooking } from "../redux/slices/rooms";
 import { URLS } from "../api/Urls";
 import noImage from '../assets/images/noimage.png';
+import moment from "moment";
 
-function to12HourFormat(timeStr) {
-  // timeStr: "2025-05-28T13:00:00.000Z" or "13:00"
-  let time = timeStr;
-  if (timeStr.includes("T")) {
-    time = timeStr.split("T")[1].substring(0, 5); // "13:00"
-  }
-  const [hour, minute] = time.split(":").map(Number);
+
+const to12HourFormat = (time24) => {
+  const [hour, minute] = time24.split(":").map(Number);
   const ampm = hour >= 12 ? "PM" : "AM";
   const hour12 = hour % 12 === 0 ? 12 : hour % 12;
   return `${hour12}:${minute.toString().padStart(2, "0")} ${ampm}`;
-}
+};
+
+const formatTimeRange = (range) => {
+  const [start, end] = range.split("-");
+  return `${to12HourFormat(start)} - ${to12HourFormat(end)}`;
+};
 
 function isValidEmail(email) {
   // Simple email regex
@@ -29,10 +31,11 @@ const Booking = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
-  const bookingData = location.state || {};
+  const bookingFormData = location.state || {};
   const [imgSrc, setImgSrc] = useState(
-    bookingData?.roomImagePath?.length > 0 ? URLS.Image_Url + bookingData?.roomImagePath[0] : noImage
+    bookingFormData?.roomImagePath?.length > 0 ? URLS.Image_Url + bookingFormData?.roomImagePath[0] : noImage
   );
+  console.log('Booking Form Data:', bookingFormData);
   // Form state
   const [form, setForm] = useState({
     name: "",
@@ -64,24 +67,25 @@ const Booking = () => {
     if (!form.mobileNo) newErrors.mobileNo = "Phone number is required.";
     if (!form.purposeOfHire) newErrors.purposeOfHire = "Purpose of hire is required.";
     if (!form.termsAndCondition) newErrors.termsAndCondition = "You must accept the terms and conditions.";
-    if (!bookingData.roomID) newErrors.roomID = "Room ID missing.";
+    if (!bookingFormData.roomID) newErrors.roomID = "Room ID missing.";
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) return;
 
     const data = {
-      franchiseeAdminID: bookingData?.franchiseeAdminID,
-      roomEventID: bookingData?.eventType,
-      roomID: bookingData?.roomID,
-      bookingStartDateTime: bookingData?.startTime,
-      bookingEndDateTime: bookingData?.endTime,
-      numberofPeople: bookingData?.people,
+      franchiseeAdminID: bookingFormData?.franchiseeAdminID,
+      roomEventID: bookingFormData?.eventType,
+      roomID: bookingFormData?.roomID,
+      bookingStartDateTime: bookingFormData?.startDateTime,
+      bookingEndDateTime: bookingFormData?.endDateTime,
+      numberofPeople: bookingFormData?.people,
       name: form?.name,
       email: form?.email,
       purposeOfHire: form?.purposeOfHire,
       mobileNo: form?.mobileNo,
       termsAndCondition: form?.termsAndCondition,
+      bookingSlotList: bookingFormData?.bookingSlotList
     };
 
     try {
@@ -112,16 +116,27 @@ const Booking = () => {
     return diffHrs > 0 ? diffHrs : 0;
   }
 
-  const hourlyPrice = Number(bookingData?.hourlyPrice) || 0;
-  const taxesPercentage = Number(bookingData?.taxes) || 0; // taxes as percentage
-  const discountPercentage = Number(bookingData?.discountPercentage) || 0;
-  const hours = getHourDiff(bookingData.startTime, bookingData.endTime);
+  const hourlyPrice = Number(bookingFormData?.hourlyPrice) || 0;
+  const taxesPercentage = Number(bookingFormData?.taxes) || 0; // taxes as percentage
+  const discountPercentage = Number(bookingFormData?.discountPercentage) || 0;
+  const hours = bookingFormData?.bookingSlotList?.length;
 
   const roomCost = +(hourlyPrice * hours).toFixed(2);
   // Both discount and taxes are calculated on base price (roomCost)
   const discount = +((roomCost * discountPercentage) / 100).toFixed(2);
   const taxes = +((roomCost * taxesPercentage) / 100).toFixed(2);
   const total = +(roomCost - discount + taxes).toFixed(2);
+
+  const selectedSlotsByDategrid = Object.entries(bookingFormData?.gridbookingSlotListByDate).map(
+    ([date, slots]) => ({
+      date,
+      startTimes: slots.map((slot) => slot.name),
+      qty: slots,
+      unit: bookingFormData?.hourlyPrice?.toFixed(2), // or your actual unit if dynamic
+      price: (slots.length * bookingFormData?.hourlyPrice)?.toFixed(2), // Example logic
+    })
+  );
+
 
   return (
     <Container className="bookingbg">
@@ -133,7 +148,7 @@ const Booking = () => {
                 {/* <img src={images.room1} alt="Room" /> */}
                 <img
                   src={imgSrc}
-                  alt={bookingData?.roomName}
+                  alt={bookingFormData?.roomName}
                   className="room-image"
                   onError={() => setImgSrc(noImage)}
                 />
@@ -141,8 +156,8 @@ const Booking = () => {
             </Col>
             <Col md={8} className="setborderbo">
               <div className="bookingheadtext">
-                <h3>{bookingData?.roomName?.toUpperCase()}</h3>
-                {/* <p>{bookingData?.location}</p> */}
+                <h3>{bookingFormData?.roomName?.toUpperCase()}</h3>
+                {/* <p>{bookingFormData?.location}</p> */}
                 {/* <h3>SOHO FARMHOUSE</h3> */}
                 <p>Moscow, Russia</p>
               </div>
@@ -320,12 +335,74 @@ const Booking = () => {
             <h5 className="mb-3 border-bottom pb-2 fw-bold">
               YOUR BOOKING DETAILS
             </h5>
+            <Container className="table-responsive">
+              {selectedSlotsByDategrid?.map((booking) => (
+                <Card className="mb-3 shadow-sm" key={booking.date}>
+                  <Card.Header>
+                    📅 {moment(booking.date).format("DD MMMM YYYY")}
+                  </Card.Header>
+                  <Card.Body>
+                    <Row>
+                      {booking.startTimes.map((time, index) => (
+                        <Col key={index} md={12} className="mb-2">
+                          <div className="p-2 border rounded bg-light">
+                            🕒  {formatTimeRange(time)}
+                          </div>
+                        </Col>
+                      ))}
+                    </Row>
+                  </Card.Body>
+                </Card>
+              ))}
+            </Container>
+            {/* <Col lg={12}>
+              <div className="table-responsive">
+                <table className="table table-bordered table-striped">
+                  <thead className="table-dark">
+                    <tr>
+                      <th>Date</th>
+                      <th>Time</th>
+                      <th>Qty</th>
+                      <th>Unit</th>
+                      <th>Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedSlotsByDategrid.map((booking, index) => (
+                      <tr key={index}>
+                        <td>{booking.date}</td>
+                        <td>
+                          <div
+                            style={{
+                              maxHeight: "37px",
+                              overflowY: "auto",
+                            }}
+                            className="time-scroll-wrapper"
+                          >
+                            {booking.startTimes.map((time, index) => (
+                              <div key={index} className="mb-1">
+                                <span className="py-1 text-nowrap d-inline-block w-100">
+                                  {formatTimeRange(time)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                        <td>{booking.qty.length}</td>
+                        <td>£{booking.unit}</td>
+                        <td>£{booking.price}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Col> */}
 
-            <div className="mb-2">
+            {/* <div className="mb-2">
               <strong>Check in</strong>
               <div className="numbertext">
-                {bookingData.date
-                  ? new Date(bookingData.date).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "long", day: "numeric" })
+                {bookingFormData.date
+                  ? new Date(bookingFormData.date).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "long", day: "numeric" })
                   : "--"}
               </div>
             </div>
@@ -333,8 +410,8 @@ const Booking = () => {
             <div className="mb-2">
               <strong>Check Out</strong>
               <div className="numbertext">
-                {bookingData.date
-                  ? new Date(bookingData.date).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "long", day: "numeric" })
+                {bookingFormData.date
+                  ? new Date(bookingFormData.date).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "long", day: "numeric" })
                   : "--"}
               </div>
             </div>
@@ -343,33 +420,33 @@ const Booking = () => {
               <div>
                 <strong>Start Time</strong>
                 <div className="numbertext">
-                  {bookingData.startTime
-                    ? to12HourFormat(bookingData.startTime)
+                  {bookingFormData.startTime
+                    ? to12HourFormat(bookingFormData.startTime)
                     : "--"}
                 </div>
               </div>
               <div>
                 <strong>End Time</strong>
                 <div className="numbertext">
-                  {bookingData.endTime
-                    ? to12HourFormat(bookingData.endTime)
+                  {bookingFormData.endTime
+                    ? to12HourFormat(bookingFormData.endTime)
                     : "--"}
                 </div>
               </div>
-            </div>
+            </div> */}
 
             <div className="d-flex justify-content-between mb-2">
               <div>
                 <strong>Attendees</strong>
                 <div className="numbertext">
-                  {bookingData.people ? bookingData.people : "--"}
+                  {bookingFormData.people ? bookingFormData.people : "--"}
                 </div>
               </div>
               <div>
                 <strong>Event Type</strong>
                 <div className="numbertext">
-                  {bookingData.eventTypeName
-                    ? bookingData.eventTypeName
+                  {bookingFormData.eventTypeName
+                    ? bookingFormData.eventTypeName
                     : "N/A"}
                 </div>
               </div>
@@ -379,31 +456,31 @@ const Booking = () => {
 
             <h6 className="mb-3 fw-bold">CHARGES</h6>
             <div className="d-flex justify-content-between mb-2">
-              <span>Hourly Price</span>
-              <span className="pricetext">£ {hourlyPrice.toLocaleString()}</span>
+              <span>Slot Price</span>
+              <span className="pricetext">£ {hourlyPrice.toFixed(2)}</span>
             </div>
             <div className="d-flex justify-content-between mb-2">
-              <span>Duration</span>
-              <span className="pricetext">{hours.toFixed(2)} hour(s)</span>
+              <span>Slots Qty</span>
+              <span className="pricetext">{hours.toString()}</span>
             </div>
             <div className="d-flex justify-content-between mb-2">
               <span>Room Cost</span>
-              <span className="pricetext">£ {roomCost.toLocaleString()}</span>
+              <span className="pricetext">£ {roomCost.toFixed(2)}</span>
             </div>
             {discountPercentage > 0 && (
               <div className="d-flex justify-content-between mb-2">
                 <span>Discount ({discountPercentage}%)</span>
-                <span className="pricetext text-success">-£ {discount.toLocaleString()}</span>
+                <span className="pricetext text-success">-£ {discount.toFixed(2)}</span>
               </div>
             )}
             <div className="d-flex justify-content-between mb-2">
               <span>Taxes & Fees ({taxesPercentage}%)</span>
-              <span className="pricetext">£ {taxes.toLocaleString()}</span>
+              <span className="pricetext">£ {taxes.toFixed(2)}</span>
             </div>
             <hr />
             <div className="d-flex justify-content-between mb-4">
               <strong>GRAND TOTAL</strong>
-              <strong className="pricetext">£ {total.toLocaleString()}</strong>
+              <strong className="pricetext">£ {total.toFixed(2)}</strong>
             </div>
 
             <Button
@@ -412,10 +489,10 @@ const Booking = () => {
               onClick={() => {
                 // navigate(-1, {
                 //   state: {
-                //     ...bookingData,
+                //     ...bookingFormData,
                 //   }
                 // });
-                navigate(-1, { state: bookingData });
+                navigate(-1, { state: bookingFormData });
               }}
             >
               Go Back

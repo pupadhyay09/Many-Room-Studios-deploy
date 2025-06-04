@@ -4,362 +4,495 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Container, Row, Col, Button, Form } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import images from "../assets/images/Images";
-import { FaClock } from 'react-icons/fa';
+import { FaClock } from "react-icons/fa";
 import { IoMdArrowRoundBack } from "react-icons/io";
 import { GrFormNextLink } from "react-icons/gr";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { getAvailableSlots } from "../redux/slices/rooms";
+import { FaEdit, FaTrash, FaSave } from "react-icons/fa";
+import TimeEditModal from "./TimeEditModal";
 
-function to12HourFormat(time24) {
-    // time24: "HH:mm"
+const BookingCalendar = ({ availableSlots }) => {
+  const [step, setStep] = useState(1);
+  const [selectedDates, setSelectedDates] = useState([]); // Make it an array
+  const [selectedSlotsByDate, setSelectedSlotsByDate] = useState({}); // { '2025-06-04': [slotId1, slotId2] }
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [people, setPeople] = useState("");
+  const [eventType, setEventType] = useState(0);
+  const [transitioning, setTransitioning] = useState(false);
+  const [visibleStep, setVisibleStep] = useState(1);
+  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
+  const [editModalIndex, setEditModalIndex] = useState(null);
+  const { roomDetails } = useSelector((state) => state.rooms);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const preFeildData = localStorage.getItem("bookingFormData");
+    if (preFeildData) {
+      const formData = JSON.parse(preFeildData);
+      console.log('formData===>', formData);
+      goToStep(3);
+      if (formData.gridbookingSlotListByDate) {
+        setSelectedSlotsByDate(formData.gridbookingSlotListByDate);
+      }
+      if (formData.people) setPeople(formData.people);
+      if (formData.eventType) setEventType(formData.eventType);
+      if (formData.selectedDates && Array.isArray(formData.selectedDates)) {
+        setSelectedDates(
+          formData.selectedDates.map((dateStr) => {
+            const dateObj = new Date(dateStr);
+            return dateObj;
+          })
+        );
+      }
+    }
+  }, []);
+
+
+  const formatDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const to12HourFormat = (time24) => {
     const [hour, minute] = time24.split(":").map(Number);
     const ampm = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 === 0 ? 12 : hour % 12;
     return `${hour12}:${minute.toString().padStart(2, "0")} ${ampm}`;
-}
+  };
 
-const BookingCalendar = ({ availableSlots }) => {
-    const location = useLocation();
-    const [step, setStep] = useState(1);
-    const [selectedDate, setSelectedDate] = useState(""); // Selected Date
-    const [selectedTime, setSelectedTime] = useState(""); // Start Time
-    const [endTime, setEndTime] = useState("");           // End Time
-    const [people, setPeople] = useState("");             // Number of People
-    const [eventType, setEventType] = useState(0);       // Event Type
-    const [transitioning, setTransitioning] = useState(false);
-    const [visibleStep, setVisibleStep] = useState(1);
-    const [errors, setErrors] = useState({});
-    const navigate = useNavigate();
-    const { roomDetails } = useSelector((state) => state.rooms);
-    const dispatch = useDispatch();
+  const formatTimeRange = (range) => {
+    const [start, end] = range.split("-");
+    return `${to12HourFormat(start)} - ${to12HourFormat(end)}`;
+  };
 
-    const timeOptions = Array.isArray(availableSlots)
-        ? availableSlots.map(slot => slot.name.padStart(2, "0") + ":00")
-        : [];
+  const handleDateSelect = async (date) => {
+    if (roomDetails?.id) {
+      const dateKey = formatDate(date);
+      await dispatch(
+        getAvailableSlots({ id: roomDetails.id, bookingDate: dateKey })
+      );
+    }
+    setCurrentDate(date);
+  };
 
-    const handleDateSelect = (date) => {
-        console.log("Selected date:", date);
-        setSelectedDate(date);
-        goToStep(2);
-    };
+  const handleTimeSelect = (dateKey, slot) => {
+    setSelectedSlotsByDate((prev) => {
+      const prevSlots = prev[dateKey] || [];
+      const isAlreadySelected = prevSlots.some((s) => s.id === slot.id);
+      const updatedSlots = isAlreadySelected
+        ? prevSlots.filter((s) => s.id !== slot.id) // Deselect
+        : [...prevSlots, slot]; // Select
 
-    const handleTimeSelect = (time) => {
-        setSelectedTime(time);
-    };
+      const newSelectedSlots = { ...prev, [dateKey]: updatedSlots };
 
-    const handleNext = () => {
-        if (selectedTime) {
-            goToStep(3);
-        }
-    };
+      if (updatedSlots.length === 0) {
+        delete newSelectedSlots[dateKey];
+        setSelectedDates((prevDates) =>
+          prevDates.filter((d) => formatDate(d) !== dateKey)
+        );
+      } else {
+        setSelectedDates((prevDates) => {
+          const isDateSelected = prevDates.some(
+            (d) => formatDate(d) === dateKey
+          );
+          return isDateSelected ? prevDates : [...prevDates, new Date(dateKey)];
+        });
+      }
 
-    const goBack = () => {
-        if (step > 1) {
-            goToStep(step - 1);
-        }
-    };
+      return newSelectedSlots;
+    });
+  };
 
-    const goToStep = (newStep) => {
-        setTransitioning(true);
-        setTimeout(() => {
-            setVisibleStep(newStep);
-            setTransitioning(false);
-        }, 300);
-    };
+  const handleNext = () => {
+    goToStep(3);
+  };
 
-    useEffect(() => {
-        setStep(visibleStep);
-    }, [visibleStep]);
+  const goBack = () => {
+    if (step > 1) {
+      goToStep(step - 1);
+    }
+  };
 
-    useEffect(() => {
-        const preFeildData = localStorage.getItem("bookingFormData");
-        if (preFeildData) {
-            const formData = JSON.parse(preFeildData);
-            setStep(3);
-            if (formData.date) {
-                setSelectedDate(new Date(formData.date + "T00:00:00Z"));
-            }
-            if (formData.startTime) {
-                // Only take "HH:mm" part if full datetime string
-                let start = formData.startTime;
-                if (start.length > 5 && start.includes("T")) {
-                    start = start.split("T")[1].slice(0, 5);
-                }
-                setSelectedTime(start);
-            }
-            if (formData.endTime) {
-                let end = formData.endTime;
-                if (end.length > 5 && end.includes("T")) {
-                    end = end.split("T")[1].slice(0, 5);
-                }
-                setEndTime(end);
-            }
-            if (formData.people) setPeople(formData.people);
-            if (formData.eventType) setEventType(formData.eventType);
-        }
-    }, [location]);
+  const goToStep = (newStep) => {
+    setTransitioning(true);
+    setTimeout(() => {
+      setVisibleStep(newStep);
+      setTransitioning(false);
+    }, 300);
+  };
 
-    useEffect(() => {
-        if (selectedDate && roomDetails?.id) {
-            const date = new Date(selectedDate);
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const formatted = `${year}-${month}-${day}`;
-            dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: formatted }));
-        }
-    }, [selectedDate, roomDetails?.id, dispatch]);
+  useEffect(() => {
+    setStep(visibleStep);
+  }, [visibleStep]);
 
-    const handleChange = (setter, field) => (e) => {
-        setter(e.target.value);
-        setErrors((prev) => ({ ...prev, [field]: "" }));
-    };
+  const handleDeleteDateRow = (dateKey) => {
+    setSelectedSlotsByDate((prev) => {
+      const updated = { ...prev };
+      delete updated[dateKey];
+      return updated;
+    });
+    setSelectedDates((prev) => prev.filter((d) => formatDate(d) !== dateKey));
+  };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        let newErrors = {};
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    let newErrors = {};
 
-        if (!selectedTime) newErrors.selectedTime = "Start time is required.";
-        if (!endTime) newErrors.endTime = "End time is required.";
-        if (!people) newErrors.people = "Number of people is required.";
-        if (!selectedDate) newErrors.selectedDate = "Please select a date.";
-        if (Number(people) > Number(roomDetails?.capacity)) {
-            newErrors.people = `Number of people cannot exceed room capacity (${roomDetails?.capacity})`;
-        }
+    if (!selectedDates || selectedDates.length === 0)
+      newErrors.selectedDate = "Please select at least one date.";
 
-        setErrors(newErrors);
-        if (Object.keys(newErrors).length > 0) return;
-        const eventTypeObj = roomDetails?.roomEventsList?.find(opt => String(opt.value) === String(eventType));
-        console.log("eventTypeObj:", eventTypeObj);
-        const eventTypeName = eventTypeObj ? eventTypeObj.text : "";
-        console.log("eventTypeName:", eventTypeName);
-        // const dateStr = new Date(selectedDate).toISOString().split("T")[0];
-        const date = new Date(selectedDate);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const formatted = `${year}-${month}-${day}`;
-
-        const startTimestamp = `${formatted}T${selectedTime}:00.000Z`;
-        const endTimestamp = `${formatted}T${endTime}:00.000Z`;
-
-        const bookingFormData = {
-            roomID: roomDetails?.id,
-            startTime: startTimestamp,
-            endTime: endTimestamp,
-            eventTypeName: eventTypeName,
-            people: Number(people),
-            eventType: eventType,
-            date: formatted,
-            franchiseeAdminID: roomDetails?.franchiseeAdminID,
-            roomImagePath: roomDetails?.roomImagePath,
-            roomName: roomDetails?.roomName,
-            location: roomDetails?.location,
-            hourlyPrice: roomDetails?.hourlyPrice,
-            discountPercentage: roomDetails?.discountPercentage,
-            taxes: roomDetails?.vatPercentage,
-            ownership: roomDetails.ownershipTypeName
-        };
-        console.log("Booking Form Data:", bookingFormData);
-        localStorage.setItem("bookingFormData", JSON.stringify(bookingFormData));
-        // Pass data to Booking page
-        navigate("/booking", { state: bookingFormData });
-    };
-
-    return (
-        <Container className="booking-wrapper">
-            <Row className="booking-card">
-                <Col md={5} className="left-panel">
-                    <Row>
-                        <Col md={1}>
-                            {step === 3 && (
-                                <IoMdArrowRoundBack variant="link" className="back-button p-0 mb-3" onClick={goBack} />
-                            )}
-                        </Col>
-                        <Col md={11}>
-                            <img src={images.logo} alt="celender logo" className="mb-3" />
-                            <p className="mb-0 roomtext">Many Rooms Studio</p>
-                            <h1>INTERVAL BOOKING</h1>
-                            <div className="mt-3">
-                                <p className="clockicontext"><FaClock /> 30 min</p>
-                                <h3 className="mb-0">Deluxe Studio Room</h3>
-                            </div>
-                            <p>
-                                Experience comfort and luxury in our Deluxe Studio Room,
-                                designed for relaxation with modern amenities and elegant style.
-                            </p>
-                        </Col>
-                    </Row>
-                </Col>
-                <Col md={7} className="right-panel">
-                    {step < 3 && (
-                        <div className="date-time-container d-flex">
-                            <div className="custom-booking-datepicker">
-                                <h4 className="ms-3">Select a Date</h4>
-                                <DatePicker
-                                    selected={selectedDate}
-                                    onChange={handleDateSelect}
-                                    inline
-                                    dayClassName={(date) =>
-                                        date.toDateString() === new Date().toDateString()
-                                            ? "today-day"
-                                            : undefined
-                                    }
-                                    minDate={new Date()}
-                                />
-                            </div>
-                            <div className={`fade-step w-100 ${transitioning ? "fade-out" : ""}`}>
-                                {selectedDate && (
-                                    <div className="time-select-wrapper">
-                                        <p>{selectedDate?.toDateString()}</p>
-                                        <div className="time-grid time-grid-scrollable">
-                                            {timeOptions.map((time) => {
-                                                const isSelected = selectedTime === time;
-                                                return isSelected ? (
-                                                    <div key={time} className="d-flex gap-2">
-                                                        <Button
-                                                            variant="primary"
-                                                            className="time-btn py-3 w-100"
-                                                            onClick={() => handleTimeSelect(time)}
-                                                        >
-                                                            {to12HourFormat(time)}
-                                                        </Button>
-                                                        <Button onClick={handleNext} className="next-btn py-3 w-100" variant="success">
-                                                            Next <GrFormNextLink />
-                                                        </Button>
-                                                    </div>
-                                                ) : (
-                                                    <div key={time}>
-                                                        <Button
-                                                            variant="outline-primary"
-                                                            className="time-btn py-3 w-100"
-                                                            onClick={() => handleTimeSelect(time)}
-                                                        >
-                                                            {to12HourFormat(time)}
-                                                        </Button>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                    {step === 3 && (
-                        <>
-                            <Form className="form-grid" onSubmit={handleSubmit}>
-                                <Row className="justify-content-between">
-                                    <Col md={5}>
-                                        <Form.Group className="mb-4">
-                                            <Form.Label>Start Time</Form.Label>
-                                            <Form.Select
-                                                value={selectedTime}
-                                                onChange={e => {
-                                                    setSelectedTime(e.target.value);
-                                                    setEndTime(""); // Reset end time if start time changes
-                                                    setErrors(prev => ({ ...prev, selectedTime: "" }));
-                                                }}
-                                            >
-                                                <option value="">Select Start Time</option>
-                                                {timeOptions.map((time) => (
-                                                    <option key={time} value={time}>{to12HourFormat(time)}</option>
-                                                ))}
-                                            </Form.Select>
-                                            {errors.selectedTime && (
-                                                <div className="text-danger mt-1">{errors.selectedTime}</div>
-                                            )}
-                                        </Form.Group>
-                                    </Col>
-                                    <Col md={5}>
-                                        <Form.Group className="mb-4">
-                                            <Form.Label>End Time</Form.Label>
-                                            <Form.Select
-                                                value={endTime}
-                                                onChange={e => {
-                                                    setEndTime(e.target.value);
-                                                    setErrors(prev => ({ ...prev, endTime: "" }));
-                                                }}
-                                                disabled={!selectedTime}
-                                            >
-                                                <option value="">Select End Time</option>
-                                                {selectedTime &&
-                                                    timeOptions
-                                                        .filter(time => time > selectedTime)
-                                                        .map(time => (
-                                                            <option key={time} value={time}>{to12HourFormat(time)}</option>
-                                                        ))
-                                                }
-                                            </Form.Select>
-                                            {errors.endTime && <div className="text-danger mt-1">{errors.endTime}</div>}
-                                        </Form.Group>
-                                    </Col>
-                                    <Col md={5}>
-                                        <Form.Group className="mb-4">
-                                            <Form.Label>Number of People max({roomDetails?.capacity})</Form.Label>
-                                            <Form.Control
-                                                placeholder="Number"
-                                                type="number"
-                                                value={people}
-                                                max={roomDetails?.capacity?.toString()}
-                                                onChange={e => {
-                                                    let val = e.target.value;
-                                                    if (roomDetails?.capacity && Number(val) > Number(roomDetails.capacity)) {
-                                                        val = roomDetails.capacity.toString();
-                                                    }
-                                                    setPeople(val);
-                                                    setErrors(prev => ({ ...prev, people: "" }));
-                                                }}
-                                            />
-                                            {errors.people && <div className="text-danger mt-1">{errors.people}</div>}
-                                        </Form.Group>
-                                    </Col>
-                                    <Col md={5}>
-                                        <Form.Group className="mb-4">
-                                            <Form.Label>Event Type</Form.Label>
-                                            <Form.Select
-                                                value={eventType}
-                                                onChange={handleChange(setEventType, "eventType")}
-                                            >
-                                                <option value="">Select</option>
-                                                {roomDetails?.roomEventsList?.length > 0 && roomDetails?.roomEventsList?.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>
-                                                        {opt.text}
-                                                    </option>
-                                                ))}
-                                            </Form.Select>
-                                            {/* No error for eventType, it's optional */}
-                                        </Form.Group>
-                                    </Col>
-                                    <Col md={5}>
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Selected Date</Form.Label>
-                                            <Form.Control
-                                                type="text"
-                                                value={selectedDate ? selectedDate.toDateString() : ""}
-                                                readOnly
-                                            />
-                                            {errors.selectedDate && <div className="text-danger mt-1">{errors.selectedDate}</div>}
-                                        </Form.Group>
-                                    </Col>
-                                </Row>
-                                <div className="form-btn-text">
-                                    <p className="text-center">
-                                        By proceeding, you confirm that you have read and agree to <br />
-                                        <span className="text-primary">Many Rooms Studio Terms of Use </span> and <span className="text-primary">Privacy Notice.</span>
-                                    </p>
-                                    <Button type="submit" className="submit-btn-form mt-2">
-                                        Schedule Event
-                                    </Button>
-                                </div>
-                            </Form>
-                        </>
-                    )}
-                </Col>
-            </Row>
-        </Container >
+    const missingTimes = selectedDates.some(
+      (date) => !selectedSlotsByDate[formatDate(date)]
     );
+    if (missingTimes) newErrors.selectedTime = "Please select time for each date.";
+
+    if (!people) newErrors.people = "Number of people is required.";
+    if (Number(people) > Number(roomDetails?.capacity)) {
+      newErrors.people = `Number of people cannot exceed room capacity (${roomDetails?.capacity})`;
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
+
+    const eventTypeObj = roomDetails?.roomEventsList?.find(
+      (opt) => String(opt.value) === String(eventType)
+    );
+    const eventTypeName = eventTypeObj ? eventTypeObj.text : "";
+
+    const bookingSlotList = selectedDates.flatMap((date) => {
+      const dateKey = formatDate(date);
+      const slots = selectedSlotsByDate[dateKey] || [];
+      return slots.map((slot) => {
+        const [start, end] = slot.name.split("-");
+        const startDate = `${formatDate(date)}T${start}:00.000Z`;
+        const endDate = `${formatDate(date)}T${end}:00.000Z`;
+
+        return {
+          startDate: startDate,
+          endDate: endDate,
+          roomSlotID: slot.id,
+        };
+      });
+    });
+
+    const allStartDates = bookingSlotList.map((s) => new Date(s.startDate));
+    const allEndDates = bookingSlotList.map((s) => new Date(s.endDate));
+
+    const startDateTime = new Date(Math.min(...allStartDates)).toISOString();
+    const endDateTime = new Date(Math.max(...allEndDates)).toISOString();
+
+    const bookingFormData = {
+      franchiseeAdminID: roomDetails?.franchiseeAdminID,
+      roomID: roomDetails?.id,
+      bookingSlotList,
+      startDateTime,
+      endDateTime,
+      people: Number(people),
+      eventType,
+      eventTypeName,
+      roomImagePath: roomDetails?.roomImagePath,
+      roomName: roomDetails?.roomName,
+      location: roomDetails?.location,
+      hourlyPrice: roomDetails?.hourlyPrice,
+      discountPercentage: roomDetails?.discountPercentage,
+      taxes: roomDetails?.vatPercentage,
+      ownership: roomDetails?.ownershipTypeName,
+      gridbookingSlotListByDate: selectedSlotsByDate,
+      selectedDates
+    };
+
+    localStorage.setItem("bookingFormData", JSON.stringify(bookingFormData));
+    navigate("/booking", { state: bookingFormData });
+  };
+
+  console.log("roomDetails===>", roomDetails);
+
+  const selectedSlotsByDategrid = Object.entries(selectedSlotsByDate).map(
+    ([date, slots]) => ({
+      date,
+      startTimes: slots.map((slot) => slot.name),
+      qty: slots,
+      unit: roomDetails?.hourlyPrice?.toFixed(2), // or your actual unit if dynamic
+      price: (slots.length * roomDetails?.hourlyPrice)?.toFixed(2), // Example logic
+    })
+  );
+
+  return (
+    <Container className="booking-wrapper">
+      <Row className="booking-card">
+        <Col md={5} className="left-panel">
+          <Row>
+            <Col md={1}>
+              {step === 3 && (
+                <IoMdArrowRoundBack
+                  variant="link"
+                  className="back-button p-0 mb-3"
+                  onClick={goBack}
+                />
+              )}
+            </Col>
+            <Col md={11}>
+              <img src={images.logo} alt="celender logo" className="mb-3" />
+              <p className="mb-0 roomtext">Many Rooms Studio</p>
+              <h1>INTERVAL BOOKING</h1>
+              <div className="mt-3">
+                <p className="clockicontext">
+                  <FaClock /> 30 min
+                </p>
+                <h3 className="mb-0">Deluxe Studio Room</h3>
+              </div>
+              <p>
+                Experience comfort and luxury in our Deluxe Studio Room,
+                designed for relaxation with modern amenities and elegant style.
+              </p>
+            </Col>
+          </Row>
+        </Col>
+
+        <Col md={7} className="right-panel">
+          {step < 3 && (
+            <div className="date-time-container d-flex">
+              <div className="custom-booking-datepicker">
+                <h4 className="ms-3">Select Dates</h4>
+                <DatePicker
+                  selected={null}
+                  onChange={handleDateSelect}
+                  highlightDates={selectedDates}
+                  includeDates={(() => {
+                    const dates = [];
+                    const today = new Date();
+                    const endDate = new Date(today);
+                    endDate.setMonth(today.getMonth() + 3);
+
+                    for (
+                      let d = new Date(today);
+                      d <= endDate;
+                      d.setDate(d.getDate() + 1)
+                    ) {
+                      dates.push(new Date(d));
+                    }
+                    return dates;
+                  })()}
+                  inline
+                  minDate={new Date()}
+                  dayClassName={(date) =>
+                    selectedDates.some(
+                      (d) => d.toDateString() === date.toDateString()
+                    )
+                      ? "selected-multi"
+                      : ""
+                  }
+                />
+              </div>
+
+              <div
+                className={`fade-step w-100 ${transitioning ? "fade-out" : ""}`}
+              >
+                {currentDate && (
+                  <div className="time-select-wrapper">
+                    <div className="time-grid time-grid-scrollable">
+                      {availableSlots.map((slot) => {
+                        const dateKey = formatDate(currentDate);
+                        const isSelected = selectedSlotsByDate[dateKey]?.some(
+                          (s) => s.id === slot.id
+                        );
+
+                        return (
+                          <Button
+                            key={slot.id}
+                            variant={isSelected ? "primary" : "outline-primary"}
+                            className="time-btn py-3 w-100 mb-2"
+                            onClick={() => handleTimeSelect(dateKey, slot)}
+                          >
+                            {formatTimeRange(slot.name)}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {selectedSlotsByDate &&
+                  Object.keys(selectedSlotsByDate).length > 0 && (
+                    <div className="d-flex justify-content-end mt-3">
+                      <Button
+                        onClick={handleNext}
+                        className="next-btn py-3 w-100 me-4"
+                        variant="success"
+                      >
+                        Next <GrFormNextLink />
+                      </Button>
+                    </div>
+                  )}
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <Form className="form-grid" onSubmit={handleSubmit}>
+              <Row className="justify-content-between">
+                <Col md={5}>
+                  <Form.Group className="mb-4">
+                    <Form.Label>
+                      Number of People max({roomDetails?.capacity})
+                    </Form.Label>
+                    <Form.Control
+                      placeholder="Number"
+                      type="number"
+                      value={people}
+                      max={roomDetails?.capacity?.toString()}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        if (
+                          roomDetails?.capacity &&
+                          Number(val) > Number(roomDetails.capacity)
+                        ) {
+                          val = roomDetails.capacity.toString();
+                        }
+                        setPeople(val);
+                        setErrors((prev) => ({ ...prev, people: "" }));
+                      }}
+                    />
+                    {errors.people && (
+                      <div className="text-danger mt-1">{errors.people}</div>
+                    )}
+                  </Form.Group>
+                </Col>
+
+                <Col md={5}>
+                  <Form.Group className="mb-4">
+                    <Form.Label>Event Type</Form.Label>
+                    <Form.Select
+                      value={eventType}
+                      onChange={(e) => {
+                        setEventType(e.target.value);
+                      }}
+                    >
+                      <option value="">Select</option>
+                      {roomDetails?.roomEventsList?.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.text}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+                <Col lg={12}>
+                  {/* <h5 className="mb-3">Booking Summary</h5> */}
+                  <div className="table-responsive">
+                    <table className="table table-bordered table-striped">
+                      <thead className="table-dark">
+                        <tr>
+                          <th>Date</th>
+                          <th>Time</th>
+                          <th>Qty</th>
+                          <th>Unit</th>
+                          <th>Price</th>
+                          <th>Manage</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedSlotsByDategrid.map((booking, index) => (
+                          <tr key={index}>
+                            <td>{booking.date}</td>
+                            <td>
+                              <div
+                                style={{
+                                  maxHeight: "37px",
+                                  overflowY: "auto",
+                                }}
+                                className="time-scroll-wrapper"
+                              >
+                                {booking.startTimes.map((time, index) => (
+                                  <div key={index} className="mb-1">
+                                    <span className="py-1 text-nowrap d-inline-block w-100">
+                                      {formatTimeRange(time)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td>{booking.qty.length}</td>
+                            <td>£{booking.unit}</td>
+                            <td>£{booking.price}</td>
+                            <td>
+                              <div className="set-table-btn d-flex gap-2">
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={async () => {
+                                    const dateKey = selectedDates[index];
+                                    await dispatch(
+                                      getAvailableSlots({
+                                        id: roomDetails.id,
+                                        bookingDate: dateKey,
+                                      })
+                                    );
+                                    setEditModalIndex(index);
+                                  }}
+                                >
+                                  <FaEdit size={16} />
+                                </Button>
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleDeleteDateRow(booking.date)
+                                  }
+                                >
+                                  <FaTrash size={16} />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Col>
+              </Row>
+
+              <div className="form-btn-text">
+                {/* <p className="text-center">
+                  By proceeding, you confirm that you have read and agree to{" "}
+                  <br />
+                  <span className="text-primary">
+                    Many Rooms Studio Terms of Use{" "}
+                  </span>{" "}
+                  and <span className="text-primary">Privacy Notice.</span>
+                </p> */}
+                <Button type="submit" className="submit-btn-form ">
+                  Schedule Event
+                </Button>
+              </div>
+            </Form>
+          )}
+        </Col>
+      </Row>
+
+      <div>
+        {editModalIndex !== null && (
+          console.log("selectedSlotsByDategrid", selectedSlotsByDategrid),
+          console.log("editModalIndex", editModalIndex),
+          console.log("selectedSlotsByDate[selectedSlotsByDate]", selectedSlotsByDate),
+          <TimeEditModal
+            show={true}
+            booking={selectedSlotsByDategrid[editModalIndex]}
+            onHide={() => setEditModalIndex(null)}
+            formatTimeRange={formatTimeRange}
+            availableSlots={availableSlots}
+            onChange={(date, slot) => {
+              handleTimeSelect(date, slot);
+            }}
+          />
+        )}
+      </div>
+    </Container>
+  );
 };
 
 export default BookingCalendar;
