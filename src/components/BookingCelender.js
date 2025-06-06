@@ -260,7 +260,7 @@ const BookingCalendar = ({ availableSlots }) => {
               <div className="custom-booking-datepicker">
                 <h4 className="ms-3">Select Dates</h4>
                 <DatePicker
-                  selected={null}
+                  selected={currentDate}
                   onChange={handleDateSelect}
                   highlightDates={selectedDates}
                   includeDates={(() => {
@@ -280,13 +280,16 @@ const BookingCalendar = ({ availableSlots }) => {
                   })()}
                   inline
                   minDate={new Date()}
-                  dayClassName={(date) =>
-                    selectedDates.some(
+                  openToDate={currentDate} // <-- Yahan currentDate use karein
+                  dayClassName={(date) => {
+                    // const isToday = date.toDateString() === new Date().toDateString();
+                    const isSelected = selectedDates.some(
                       (d) => d.toDateString() === date.toDateString()
-                    )
-                      ? "selected-multi"
-                      : ""
-                  }
+                    );
+                    // if (isToday) return "datepicker-today";
+                    if (isSelected) return "selected-multi";
+                    return "";
+                  }}
                 />
               </div>
 
@@ -432,7 +435,9 @@ const BookingCalendar = ({ availableSlots }) => {
                                         bookingDate: dateKey,
                                       })
                                     );
-                                    setEditModalIndex(index);
+                                    goBack()
+                                    setCurrentDate(dateKey);
+                                    // setEditModalIndex(index);
                                   }}
                                 >
                                   <FaEdit size={16} />
