@@ -392,69 +392,75 @@ const BookingCalendar = ({ availableSlots }) => {
                         <tr>
                           <th>Date</th>
                           <th>Time</th>
-                          <th>Qty</th>
                           <th>Unit</th>
                           <th>Price</th>
                           <th>Manage</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {selectedSlotsByDategrid.map((booking, index) => (
-                          <tr key={index}>
-                            <td>{booking.date}</td>
-                            <td>
-                              <div
-                                style={{
-                                  maxHeight: "37px",
-                                  overflowY: "auto",
-                                }}
-                                className="time-scroll-wrapper"
-                              >
-                                {booking.startTimes.map((time, index) => (
-                                  <div key={index} className="mb-1">
-                                    <span className="py-1 text-nowrap d-inline-block w-100">
-                                      {formatTimeRange(time)}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </td>
-                            <td>{booking.qty.length}</td>
-                            <td>£{booking.unit}</td>
-                            <td>£{booking.price}</td>
-                            <td>
-                              <div className="set-table-btn d-flex gap-2">
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  onClick={async () => {
-                                    const dateKey = selectedDates[index];
-                                    await dispatch(
-                                      getAvailableSlots({
-                                        id: roomDetails.id,
-                                        bookingDate: dateKey,
-                                      })
-                                    );
-                                    goBack()
-                                    setCurrentDate(dateKey);
-                                    // setEditModalIndex(index);
-                                  }}
-                                >
-                                  <FaEdit size={16} />
-                                </Button>
-                                <Button
-                                  variant="outline-danger"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleDeleteDateRow(booking.date)
-                                  }
-                                >
-                                  <FaTrash size={16} />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                        {selectedSlotsByDategrid.map((booking, groupIdx) =>
+                          booking.qty.map((slot, slotIdx) => {
+                            // Calculate absolute row index for zebra striping
+                            const rowIndex = selectedSlotsByDategrid
+                              .slice(0, groupIdx)
+                              .reduce((acc, b) => acc + b.qty.length, 0) + slotIdx;
+                            const rowClass = slotIdx % 2 === 0 ? "table-row-even" : "table-row-odd";
+                            const dateActionBg = groupIdx % 2 === 0 ? "date-action-even" : "date-action-odd";
+                            console.log('groupIdx===>', groupIdx)
+                            return (
+                              <tr key={slot.id} className={rowClass}>
+                                {slotIdx === 0 ? (
+                                  <td
+                                    rowSpan={booking.qty.length}
+                                    className={`date-action-cell ${dateActionBg}`}
+                                    style={{
+                                      verticalAlign: "middle",
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    {booking.date}
+                                  </td>
+                                ) : null}
+                                <td>{formatTimeRange(slot.name)}</td>
+                                <td>£{booking.unit}</td>
+                                <td>£{booking.unit}</td>
+                                {slotIdx === 0 ? (
+                                  <td
+                                    rowSpan={booking.qty.length}
+                                    className={`date-action-cell ${dateActionBg}`}
+                                    style={{ verticalAlign: "middle" }}
+                                  >
+                                    <div className="set-table-btn d-flex gap-2">
+                                      <Button
+                                        variant="outline-primary"
+                                        size="sm"
+                                        onClick={async () => {
+                                          await dispatch(
+                                            getAvailableSlots({
+                                              id: roomDetails.id,
+                                              bookingDate: booking.date,
+                                            })
+                                          );
+                                          goBack();
+                                          setCurrentDate(new Date(booking.date));
+                                        }}
+                                      >
+                                        <FaEdit size={16} />
+                                      </Button>
+                                      <Button
+                                        variant="outline-danger"
+                                        size="sm"
+                                        onClick={() => handleDeleteDateRow(booking.date)}
+                                      >
+                                        <FaTrash size={16} />
+                                      </Button>
+                                    </div>
+                                  </td>
+                                ) : null}
+                              </tr>
+                            );
+                          })
+                        )}
                       </tbody>
                     </table>
                   </div>
