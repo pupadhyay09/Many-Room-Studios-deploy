@@ -11,17 +11,23 @@ import images from "../assets/images/Images";
 import { useDispatch, useSelector } from "react-redux";
 import { URLS } from "../api/Urls";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { getMasterDetails, getRoomDetails, setRoomDetails, getAvailableSlots } from "../redux/slices/rooms";
-import noImage from '../assets/images/noimage.png';
+import {
+  getMasterDetails,
+  getRoomDetails,
+  setRoomDetails,
+  getAvailableSlots,
+} from "../redux/slices/rooms";
+import noImage from "../assets/images/noimage.png";
 import { compose } from "@reduxjs/toolkit";
 
 const RoomDetails = () => {
-  const { id } = useParams(); // <-- id from URL
+  const { id } = useParams();
   const location = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
   const { roomDetails, availableSlots } = useSelector((state) => state.rooms);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -34,13 +40,18 @@ const RoomDetails = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    console.log('Location state:sfbsdmf', location.state);
+    console.log("Location state:sfbsdmf", location.state);
   }, [location.state]);
 
   useEffect(() => {
     if (roomDetails?.id) {
       const today = new Date().toISOString().split("T")[0];
-      console.log('Fetching available slots for room:', roomDetails.id, 'on date:', today);
+      console.log(
+        "Fetching available slots for room:",
+        roomDetails.id,
+        "on date:",
+        today
+      );
       dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: today }));
     }
   }, [roomDetails?.id, dispatch]);
@@ -84,7 +95,7 @@ const RoomDetails = () => {
           className="mainslider"
         >
           {/* Custom Navigation */}
-          <div>
+          {/* <div>
             <div
               className="custom-prev"
               style={{
@@ -111,22 +122,25 @@ const RoomDetails = () => {
                 <MdArrowRight />
               </button>
             </div>
-          </div>
+          </div> */}
 
           <Swiper
             slidesPerView={3}
             centeredSlides={true}
             spaceBetween={30}
-            onSlideChange={(swiper) => { console.log('swiper.realIndex===>', swiper.realIndex); setActiveIndex(swiper.realIndex) }}
-            loop={true}
-            navigation={{
-              prevEl: ".custom-prev",
-              nextEl: ".custom-next",
+            onSlideChange={(swiper) => {
+              setActiveIndex(swiper.realIndex);
             }}
-            modules={[Navigation]}
+            loop={true}
+            autoplay={{
+              delay: 5000,
+              disableOnInteraction: true,
+              pauseOnMouseEnter: true, 
+              reverseDirection: true, 
+            }}
+            modules={[Autoplay]}
             style={{
               padding: "0 20px",
-              margin: "0 20px",
               overflow: "visible",
             }}
             breakpoints={{
@@ -144,69 +158,60 @@ const RoomDetails = () => {
               },
             }}
           >
-            {
-
-              roomDetails && roomDetails?.roomImagePath?.length > 0 ?
-                roomDetails?.roomImagePath?.map((room, index) => {
-                  const isActive = index === activeIndex;
-                  let imgSrc = room ? URLS.Image_Url + room : noImage;
-                  return (
-                    <SwiperSlide
-                      key={index}
-                      style={{
-                        transform: isActive ? "scale(1)" : "scale(0.9)",
-                        height: isActive ? "620px" : "580px",
-                        transition: "transform 0.3s ease, height 0.3s ease",
-                        borderRadius: "16px",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "flex-end",
-                        position: "relative",
-                      }}
-                    >
-                      <img
-                        src={imgSrc}
-                        alt={roomDetails?.roomName}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          borderRadius: "16px",
-                        }}
-                        className={isActive ? "add" : ""}
-                        onError={() => { imgSrc = noImage; }}
-                      />
-                    </SwiperSlide>
-                  );
-                })
-
-                : <SwiperSlide
-                  key={0}
-                  style={{
-                    transform: "scale(1)",
-                    height: "620px",
-                    transition: "transform 0.3s ease, height 0.3s ease",
-                    borderRadius: "16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "flex-end",
-                    position: "relative",
-                  }}
-                >
-                  <img
-                    src={noImage}
-                    alt={roomDetails?.roomName}
+            {roomDetails && roomDetails?.roomImagePath?.length > 0 ? (
+              roomDetails?.roomImagePath?.map((room, index) => {
+                const isActive = index === activeIndex;
+                let imgSrc = room ? URLS.Image_Url + room : noImage;
+                return (
+                  <SwiperSlide
+                    key={index}
                     style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      borderRadius: "16px",
+                      transform: isActive ? "scale(1)" : "scale(0.9)",
+                      height: isActive ? "620px" : "580px",
+                      transition: "transform 0.7s ease, height 0.5s ease",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "flex-end",
+                      position: "relative",
                     }}
-                    className={"add"}
-                  // onError={handleImageError}
-                  />
-                </SwiperSlide>
-            }
+                  >
+                    <img
+                      src={imgSrc}
+                      alt={roomDetails?.roomName}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        borderRadius: "16px",
+                        borderTopLeftRadius: isActive ? "100px" : "16px",
+                        borderBottomRightRadius: isActive ? "100px" : "16px",
+                        border: isActive
+                          ? "2px solid black"
+                          : "2px solid transparent",
+                      }}
+                      className={isActive ? "add" : ""}
+                      onError={() => {
+                        imgSrc = noImage;
+                      }}
+                    />
+                  </SwiperSlide>
+                );
+              })
+            ) : (
+              <SwiperSlide key={0} style={{ height: "620px" }}>
+                <img
+                  src={noImage}
+                  alt={roomDetails?.roomName}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    borderRadius: "16px",
+                  }}
+                  className={"add"}
+                />
+              </SwiperSlide>
+            )}
           </Swiper>
 
           {/* STATIC TEXT SECTION (not sliding) */}
@@ -215,7 +220,7 @@ const RoomDetails = () => {
               position: "absolute",
               bottom: "20px",
               left: "35%",
-              bottom: "8%",
+              bottom: "6%",
               padding: "20px",
               maxWidth: "33%",
             }}
@@ -223,8 +228,11 @@ const RoomDetails = () => {
           >
             <h5 className="housename">{roomDetails?.roomName}</h5>
             <p className="housetypes">
-              <span>Max: {roomDetails?.capacity}</span>{" "}
-              <span>{roomDetails.totalBeds + ' bed ' + roomDetails?.totalSofas + ' sofa'}</span>{" "}
+              <span>
+                Max: {roomDetails?.capacity} &nbsp; | &nbsp;
+                {roomDetails.totalBeds} bed {roomDetails?.totalSofas} sofa
+              </span>
+              <br />
               <span>Event Type: {roomDetails.roomEventsName}</span>
             </p>
             <p className="housedescription">{roomDetails.description}</p>
@@ -242,7 +250,7 @@ const RoomDetails = () => {
 
       <section>
         <div className="herobgone">
-          <Container className="my-5">
+          <Container className="my-sm-5 mb-5 mb-sm-0">
             <Row>
               <Col md={12} className="text-center my-5">
                 <h1>Discover your desired space</h1>

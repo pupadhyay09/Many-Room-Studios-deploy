@@ -6,9 +6,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { roomBooking } from "../redux/slices/rooms";
 import { URLS } from "../api/Urls";
-import noImage from '../assets/images/noimage.png';
+import noImage from "../assets/images/noimage.png";
 import moment from "moment";
-
 
 const to12HourFormat = (time24) => {
   const [hour, minute] = time24.split(":").map(Number);
@@ -33,9 +32,11 @@ const Booking = () => {
   const navigate = useNavigate();
   const bookingFormData = location.state || {};
   const [imgSrc, setImgSrc] = useState(
-    bookingFormData?.roomImagePath?.length > 0 ? URLS.Image_Url + bookingFormData?.roomImagePath[0] : noImage
+    bookingFormData?.roomImagePath?.length > 0
+      ? URLS.Image_Url + bookingFormData?.roomImagePath[0]
+      : noImage
   );
-  console.log('Booking Form Data:', bookingFormData);
+  console.log("Booking Form Data:", bookingFormData);
   // Form state
   const [form, setForm] = useState({
     name: "",
@@ -65,8 +66,10 @@ const Booking = () => {
       newErrors.email = "Please enter a valid email address.";
     }
     if (!form.mobileNo) newErrors.mobileNo = "Phone number is required.";
-    if (!form.purposeOfHire) newErrors.purposeOfHire = "Purpose of hire is required.";
-    if (!form.termsAndCondition) newErrors.termsAndCondition = "You must accept the terms and conditions.";
+    if (!form.purposeOfHire)
+      newErrors.purposeOfHire = "Purpose of hire is required.";
+    if (!form.termsAndCondition)
+      newErrors.termsAndCondition = "You must accept the terms and conditions.";
     if (!bookingFormData.roomID) newErrors.roomID = "Room ID missing.";
 
     setErrors(newErrors);
@@ -85,12 +88,12 @@ const Booking = () => {
       purposeOfHire: form?.purposeOfHire,
       mobileNo: form?.mobileNo,
       termsAndCondition: form?.termsAndCondition,
-      bookingSlotList: bookingFormData?.bookingSlotList
+      bookingSlotList: bookingFormData?.bookingSlotList,
     };
 
     try {
       const action = await dispatch(roomBooking(JSON.stringify(data)));
-      console.log('Booking action dispatched:', action);
+      console.log("Booking action dispatched:", action);
       if (action.payload?.type === "success") {
         // Success logic
         const response = action.payload.data;
@@ -99,7 +102,12 @@ const Booking = () => {
         }
       } else if (action.payload?.type === "rejected" || action.error) {
         // Error logic
-        setErrors({ api: action.payload?.message || action.error?.message || "Booking failed." });
+        setErrors({
+          api:
+            action.payload?.message ||
+            action.error?.message ||
+            "Booking failed.",
+        });
       }
     } catch (error) {
       // Show API error message if available
@@ -127,22 +135,21 @@ const Booking = () => {
   const taxes = +((roomCost * taxesPercentage) / 100).toFixed(2);
   const total = +(roomCost - discount + taxes).toFixed(2);
 
-  const selectedSlotsByDategrid = Object.entries(bookingFormData?.gridbookingSlotListByDate).map(
-    ([date, slots]) => ({
-      date,
-      startTimes: slots.map((slot) => slot.name),
-      qty: slots,
-      unit: bookingFormData?.hourlyPrice?.toFixed(2), // or your actual unit if dynamic
-      price: (slots.length * bookingFormData?.hourlyPrice)?.toFixed(2), // Example logic
-    })
-  );
-
+  const selectedSlotsByDategrid = Object.entries(
+    bookingFormData?.gridbookingSlotListByDate
+  ).map(([date, slots]) => ({
+    date,
+    startTimes: slots.map((slot) => slot.name),
+    qty: slots,
+    unit: bookingFormData?.hourlyPrice?.toFixed(2), // or your actual unit if dynamic
+    price: (slots.length * bookingFormData?.hourlyPrice)?.toFixed(2), // Example logic
+  }));
 
   return (
     <Container className="bookingbg">
       <Row>
         <Col lg={8}>
-          <Row className="bookhead">
+          <Row className="bookhead justify-content-center">
             <Col md={4}>
               <div className="bookroomimg">
                 {/* <img src={images.room1} alt="Room" /> */}
@@ -187,7 +194,7 @@ const Booking = () => {
 
             <Row>
               <div className="p-sm-4 p-2">
-                <Form >
+                <Form>
                   <Row className="mb-3 g-3">
                     <Col md={6}>
                       <Form.Group>
@@ -200,7 +207,9 @@ const Booking = () => {
                           type="text"
                           placeholder="Enter your name"
                         />
-                        {errors.name && <div className="text-danger mt-1">{errors.name}</div>}
+                        {errors.name && (
+                          <div className="text-danger mt-1">{errors.name}</div>
+                        )}
                       </Form.Group>
                     </Col>
                     <Col md={6}>
@@ -214,7 +223,9 @@ const Booking = () => {
                           type="email"
                           placeholder="Enter your email"
                         />
-                        {errors.email && <div className="text-danger mt-1">{errors.email}</div>}
+                        {errors.email && (
+                          <div className="text-danger mt-1">{errors.email}</div>
+                        )}
                       </Form.Group>
                     </Col>
                   </Row>
@@ -237,7 +248,11 @@ const Booking = () => {
                           placeholder="Phone number"
                         />
                       </div>
-                      {errors.mobileNo && <div className="text-danger mt-1">{errors.mobileNo}</div>}
+                      {errors.mobileNo && (
+                        <div className="text-danger mt-1">
+                          {errors.mobileNo}
+                        </div>
+                      )}
                     </Col>
 
                     <Col md={12}>
@@ -251,7 +266,11 @@ const Booking = () => {
                           type="text"
                           placeholder="Purpose of hire"
                         />
-                        {errors.purposeOfHire && <div className="text-danger mt-1">{errors.purposeOfHire}</div>}
+                        {errors.purposeOfHire && (
+                          <div className="text-danger mt-1">
+                            {errors.purposeOfHire}
+                          </div>
+                        )}
                       </Form.Group>
                     </Col>
                   </Row>
@@ -280,7 +299,11 @@ const Booking = () => {
                         </>
                       }
                     />
-                    {errors.termsAndCondition && <div className="text-danger mt-1">{errors.termsAndCondition}</div>}
+                    {errors.termsAndCondition && (
+                      <div className="text-danger mt-1">
+                        {errors.termsAndCondition}
+                      </div>
+                    )}
                   </Form.Group>
 
                   <Form.Group className="mb-3">
@@ -335,7 +358,7 @@ const Booking = () => {
             <h5 className="mb-3 border-bottom pb-2 fw-bold">
               YOUR BOOKING DETAILS
             </h5>
-            <Container className="table-responsive">
+            {/* <Container className="table-responsive">
               {selectedSlotsByDategrid?.map((booking) => (
                 <Card className="mb-3 shadow-sm" key={booking.date}>
                   <Card.Header>
@@ -354,6 +377,36 @@ const Booking = () => {
                   </Card.Body>
                 </Card>
               ))}
+            </Container> */}
+            <Container>
+              <Card
+                className="mb-3 shadow-sm border-0 booking-details-card"
+                style={{ background: "#f9f9f9", borderRadius: "18px" }}
+              >
+                <Card.Body>
+                  <Row className="justify-content-between align-items-center g-2">
+                    <Col xs={12} xl={5}>
+                      <div className="d-flex align-items-center mb-2 mb-md-0">
+                        <span style={{ fontSize: "1.3rem", marginRight: 8 }}>📅</span>
+                        <span className="fw-bold" style={{ fontSize: "1rem" }}>
+                          23 June 2025
+                        </span>
+                      </div>
+                    </Col>
+                    <Col xs={12} xl={4}>
+                      <div className="d-flex align-items-center justify-content-md-end">
+                        <span style={{ fontSize: "1.2rem", marginRight: 8 }}>🕒</span>
+                        <span
+                          className="badge bg-light text-dark border"
+                          style={{ fontSize: "0.9rem" }}
+                        >
+                          2:31 AM - 4:30 AM
+                        </span>
+                      </div>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
             </Container>
             {/* <Col lg={12}>
               <div className="table-responsive">
@@ -470,7 +523,9 @@ const Booking = () => {
             {discountPercentage > 0 && (
               <div className="d-flex justify-content-between mb-2">
                 <span>Discount ({discountPercentage}%)</span>
-                <span className="pricetext text-success">-£ {discount.toFixed(2)}</span>
+                <span className="pricetext text-success">
+                  -£ {discount.toFixed(2)}
+                </span>
               </div>
             )}
             <div className="d-flex justify-content-between mb-2">
@@ -497,7 +552,12 @@ const Booking = () => {
             >
               Go Back
             </Button>
-            <Button type="submit" variant="dark" className="w-100 py-3" onClick={handlePayment}>
+            <Button
+              type="submit"
+              variant="dark"
+              className="w-100 py-3"
+              onClick={handlePayment}
+            >
               Make Payment
             </Button>
             {errors.api && <div className="text-danger mt-2">{errors.api}</div>}
@@ -506,7 +566,6 @@ const Booking = () => {
       </Row>
     </Container>
   );
-
 };
 
 export default Booking;

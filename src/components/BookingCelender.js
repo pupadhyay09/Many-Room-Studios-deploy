@@ -143,16 +143,9 @@ const BookingCalendar = ({ availableSlots }) => {
     e.preventDefault();
     let newErrors = {};
 
-    if (!selectedDates || selectedDates.length === 0)
-      newErrors.selectedDate = "Please select at least one date.";
-
-    const missingTimes = selectedDates.some(
-      (date) => !selectedSlotsByDate[formatDate(date)]
-    );
-    if (missingTimes) newErrors.selectedTime = "Please select time for each date.";
-
-    if (!people) newErrors.people = "Number of people is required.";
-    if (Number(people) > Number(roomDetails?.capacity)) {
+    // Remove required validation for people and eventType
+    // if (!people) newErrors.people = "Number of people is required.";
+    if (people && Number(people) > Number(roomDetails?.capacity)) {
       newErrors.people = `Number of people cannot exceed room capacity (${roomDetails?.capacity})`;
     }
 
@@ -180,11 +173,15 @@ const BookingCalendar = ({ availableSlots }) => {
       });
     });
 
-    const allStartDates = bookingSlotList.map((s) => new Date(s.startDate));
-    const allEndDates = bookingSlotList.map((s) => new Date(s.endDate));
-
-    const startDateTime = new Date(Math.min(...allStartDates)).toISOString();
-    const endDateTime = new Date(Math.max(...allEndDates)).toISOString();
+    // Handle empty bookingSlotList
+    let startDateTime = "";
+    let endDateTime = "";
+    if (bookingSlotList.length > 0) {
+      const allStartDates = bookingSlotList.map((s) => new Date(s.startDate));
+      const allEndDates = bookingSlotList.map((s) => new Date(s.endDate));
+      startDateTime = new Date(Math.min(...allStartDates)).toISOString();
+      endDateTime = new Date(Math.max(...allEndDates)).toISOString();
+    }
 
     const bookingFormData = {
       franchiseeAdminID: roomDetails?.franchiseeAdminID,
@@ -192,7 +189,7 @@ const BookingCalendar = ({ availableSlots }) => {
       bookingSlotList,
       startDateTime,
       endDateTime,
-      people: Number(people),
+      people: people ? Number(people) : undefined,
       eventType,
       eventTypeName,
       roomImagePath: roomDetails?.roomImagePath,
@@ -239,7 +236,7 @@ const BookingCalendar = ({ availableSlots }) => {
             <Col md={11}>
               <img src={images.logo} alt="celender logo" className="mb-3" />
               <p className="mb-0 roomtext">Many Rooms Studio</p>
-              <h1>INTERVAL BOOKING</h1>
+              {/* <h1>INTERVAL BOOKING</h1> */}
               <div className="mt-3">
                 <p className="clockicontext">
                   <FaClock /> 30 min
@@ -338,7 +335,7 @@ const BookingCalendar = ({ availableSlots }) => {
           {step === 3 && (
             <Form className="form-grid" onSubmit={handleSubmit}>
               <Row className="justify-content-between">
-                <Col md={5}>
+                {/* <Col md={5}>
                   <Form.Group className="mb-4">
                     <Form.Label>
                       Number of People max({roomDetails?.capacity})
@@ -364,9 +361,9 @@ const BookingCalendar = ({ availableSlots }) => {
                       <div className="text-danger mt-1">{errors.people}</div>
                     )}
                   </Form.Group>
-                </Col>
+                </Col> */}
 
-                <Col md={5}>
+                {/* <Col md={5}>
                   <Form.Group className="mb-4">
                     <Form.Label>Event Type</Form.Label>
                     <Form.Select
@@ -383,18 +380,18 @@ const BookingCalendar = ({ availableSlots }) => {
                       ))}
                     </Form.Select>
                   </Form.Group>
-                </Col>
+                </Col> */}
                 <Col lg={12}>
                   {/* <h5 className="mb-3">Booking Summary</h5> */}
                   <div className="table-responsive">
-                    <table className="table table-bordered table-striped">
+                    <table className="table table-bordered table-striped mb-0">
                       <thead className="table-dark">
                         <tr>
-                          <th>Date</th>
-                          <th>Time</th>
-                          <th>Unit</th>
-                          <th>Price</th>
-                          <th>Manage</th>
+                          <th style={{ whiteSpace: "nowrap" }}>Date</th>
+                          <th style={{ whiteSpace: "nowrap" }}>Time</th>
+                          <th style={{ whiteSpace: "nowrap" }} className="d-sm-table-cell">Unit</th>
+                          <th style={{ whiteSpace: "nowrap" }} className="d-sm-table-cell">Price</th>
+                          <th style={{ whiteSpace: "nowrap" }}>Manage</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -416,21 +413,22 @@ const BookingCalendar = ({ availableSlots }) => {
                                     style={{
                                       verticalAlign: "middle",
                                       fontWeight: "bold",
+                                      whiteSpace: "nowrap",
                                     }}
                                   >
                                     {booking.date}
                                   </td>
                                 ) : null}
-                                <td>{formatTimeRange(slot.name)}</td>
-                                <td>£{booking.unit}</td>
-                                <td>£{booking.unit}</td>
+                                <td style={{ whiteSpace: "nowrap" }}>{formatTimeRange(slot.name)}</td>
+                                <td className="d-sm-table-cell" style={{ whiteSpace: "nowrap" }}>£{booking.unit}</td>
+                                <td className="d-sm-table-cell" style={{ whiteSpace: "nowrap" }}>£{booking.unit}</td>
                                 {slotIdx === 0 ? (
                                   <td
                                     rowSpan={booking.qty.length}
                                     className={`date-action-cell ${dateActionBg}`}
                                     style={{ verticalAlign: "middle" }}
                                   >
-                                    <div className="set-table-btn d-flex gap-2">
+                                    <div className="set-table-btn d-flex gap-2 flex-wrap">
                                       <Button
                                         variant="outline-primary"
                                         size="sm"
@@ -477,7 +475,7 @@ const BookingCalendar = ({ availableSlots }) => {
                   and <span className="text-primary">Privacy Notice.</span>
                 </p> */}
                 <Button type="submit" className="submit-btn-form ">
-                  Schedule Event
+                  Book your room
                 </Button>
               </div>
             </Form>

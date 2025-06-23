@@ -329,16 +329,22 @@
   padding-bottom: 10px;
   margin-bottom: 0;
   font-weight: 600;
-  margin-left: 8px;
+  /* margin-left: 8px; */
 }
 
 .housetypes span {
-  margin: 0 8px;
+  /* margin: 0 8px; */
   font-weight: 600;
 }
 
 .housedescription {
-  margin: 0 8px;
+  /* margin: 0 8px; */
+  height: 100px;
+  overflow-y: scroll;
+}
+
+.housedescription::-webkit-scrollbar {
+  display: none;
 }
 
 .sliderbtn-add {
@@ -704,7 +710,6 @@
   margin: 1rem 0;
 }
 
-
 .custom-time-scroll {
   display: flex;
   flex-direction: column;
@@ -765,6 +770,35 @@
   background: #f6f6f6 !important;
 }
 
+.room-description {
+  height: 100px;
+  overflow-y: scroll;
+}
+
+.room-description::-webkit-scrollbar {
+  display: none;
+}
+
+.booking-details-card {
+  background: #f9f9f9;
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: none;
+  margin-bottom: 1rem;
+}
+
+.swiper-wrapper {
+  display: flex !important;
+  transition-timing-function: ease !important;
+}
+
+.swiper-slide {
+  flex-shrink: 0;
+  width: auto;
+  height: auto;
+}
+
+
 @media only screen and (max-width: 1210px) {
   .date-time-container {
     flex-direction: column;
@@ -790,11 +824,19 @@
     max-width: 45% !important;
     left: 30% !important;
   }
+
+  .booking-details-card .d-flex {
+    justify-content: flex-start !important;
+  }
 }
 
 @media only screen and (max-width: 992px) {
   .room-image {
     width: auto;
+  }
+
+  .set-table-btn button {
+    width: 100%;
   }
 }
 
@@ -817,8 +859,12 @@
 
   .responsivslider {
     bottom: 5% !important;
-    max-width: 90% !important;
+    max-width: 75% !important;
     left: 5% !important;
+  }
+
+  .herobgone {
+    padding: 20px 0;
   }
 }
 
@@ -859,10 +905,6 @@
     font-size: 28px;
   }
 
-  .mainslider {
-    height: 1150px !important;
-  }
-
   .responsivslider {
     bottom: 12% !important;
     max-width: 100% !important;
@@ -874,5 +916,32 @@
 
   .custom-next {
     bottom: 5% !important;
+  }
+
+  .room-image {
+    width: 100%;
+  }
+
+  .mainslider .swiper-slide {
+    justify-content: unset !important;
+    height: unset !important;
+  }
+  .mainslider .swiper-slide img {
+    border-radius: 12px !important;
+    height: unset !important;
+    width: unset !important;
+  }
+  .responsivslider {
+    position: unset !important;
+    padding: 20px !important;
+  }
+
+  .custom-prev,
+  .custom-next {
+    bottom: 2% !important;
+  }
+
+  .mainslider {
+    height: fit-content !important;
   }
 }
