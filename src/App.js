@@ -12,6 +12,7 @@ import Login from "./pages/login/Login";
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import React from "react";
+import PackageList from "./pages/PackagePage";
 
 function AppRoutes() {
   const location = useLocation();
@@ -70,6 +71,15 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <Faq />
+            </PrivateRoute>
+          }
+
+        />
+        <Route
+          path="/packages"
+          element={
+            <PrivateRoute>
+              <PackageList />
             </PrivateRoute>
           }
         />

@@ -42,7 +42,7 @@ const RoomDetails = () => {
     dispatch(getMasterDetails("EventType"));
   }, [dispatch]);
 
-  useEffect(() => {}, [location.state]);
+  useEffect(() => { }, [location.state]);
 
   useEffect(() => {
     if (roomDetails?.id) {
@@ -178,9 +178,9 @@ const RoomDetails = () => {
                 navigation={
                   showNavigation
                     ? {
-                        prevEl: prevRef.current,
-                        nextEl: nextRef.current,
-                      }
+                      prevEl: prevRef.current,
+                      nextEl: nextRef.current,
+                    }
                     : false
                 }
                 modules={[Navigation]}
@@ -268,7 +268,7 @@ const RoomDetails = () => {
       <section>
         <Container>
           <div className="bookingdesign">
-            <BookingCelender availableSlots={availableSlots} />
+            <BookingCelender availableSlots={availableSlots ? availableSlots : []} />
           </div>
         </Container>
       </section>

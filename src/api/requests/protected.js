@@ -71,6 +71,26 @@ const getAvilableSlotApi = async (id, bookingDate) => {
   }
 };
 
+const getRoomPackagesApi = async (id) => {
+  try {
+    const { data } = await withAuthApi.get(`/api/v1/roompackage/list?roomId=${id}`);
+    return data;
+  } catch (error) {
+    console.error('Error in getRoomPackagesApi:', error);
+    throw error?.response?.data || { message: "Failed to fetch room packages." };
+  }
+};
+
+const getRoomDropdownListApi = async () => {
+  try {
+    const { data } = await withAuthApi.get(`/api/v1/rooms/dropdown/list`);
+    return data;
+  } catch (error) {
+    console.error('Error in getRoomDropdownListApi:', error);
+    throw error?.response?.data || { message: "Failed to fetch room dropdown list." };
+  }
+};
+
 export {
   getUserInfoApi,
   roomBookingApi,
@@ -78,5 +98,7 @@ export {
   getRoomListApi,
   getMasterDetailsApi,
   getRoomDetailsApi,
-  getAvilableSlotApi
+  getAvilableSlotApi,
+  getRoomPackagesApi,
+  getRoomDropdownListApi
 };

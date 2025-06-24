@@ -88,7 +88,8 @@ const Home = () => {
   const handleBookRoom = (id) => {
     const roomDetails = roomList.find((room) => room.id === id);
     dispatch(setRoomDetails(roomDetails));
-    navigate(`/rooms/${id}`);
+    // navigate(`/rooms/${id}`);
+    navigate(`/packages`, { state: { roomID: id } });
   };
   return (
     <>
@@ -137,7 +138,7 @@ const Home = () => {
                   label="Start time"
                   value={startTime}
                   onChange={handleStartTimeChange}
-                  minTime={isToday ? nowTime.slice(0,5) : "00:00"}
+                  minTime={isToday ? nowTime.slice(0, 5) : "00:00"}
                   format="HH:mm"
                 />
               </Col>

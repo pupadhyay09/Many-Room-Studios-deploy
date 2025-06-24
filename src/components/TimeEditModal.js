@@ -16,18 +16,24 @@ const TimeEditModal = ({
       </Modal.Header>
       <Modal.Body>
         <div className="d-flex flex-wrap gap-2">
-          {availableSlots.map((slot) => {
-            const isSelected = booking?.qty?.some((s) => s.id === slot.id);
-            return (
-              <Button
-                key={slot.id}
-                variant={isSelected ? "primary" : "outline-secondary"}
-                onClick={() => onChange(booking.date, slot)}
-              >
-                {formatTimeRange(slot.name)}
-              </Button>
-            );
-          })}
+          {availableSlots?.length === 0 && (
+            <p className="text-center mt-3">
+              No time slots available for this date.
+            </p>
+          )}
+          {
+            availableSlots?.map((slot) => {
+              const isSelected = booking?.qty?.some((s) => s.id === slot.id);
+              return (
+                <Button
+                  key={slot.id}
+                  variant={isSelected ? "primary" : "outline-secondary"}
+                  onClick={() => onChange(booking.date, slot)}
+                >
+                  {formatTimeRange(slot.name)}
+                </Button>
+              );
+            })}
         </div>
       </Modal.Body>
     </Modal>

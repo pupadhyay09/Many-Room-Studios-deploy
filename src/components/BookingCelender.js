@@ -170,7 +170,16 @@ const BookingCalendar = ({ availableSlots }) => {
             <div className="time-select-wrapper w-100">
               {currentDate && (
                 <div className="time-grid time-grid-scrollable">
-                  {availableSlots.map((slot) => {
+                  {
+                    availableSlots?.length === 0 && (
+                      <p className="text-center mt-3">
+                        No time slots available for this date.
+                      </p>
+                    )
+                  }
+
+                  {
+                  availableSlots?.map((slot) => {
                     const dateKey = formatDate(currentDate);
                     const isSelected = selectedSlotsByDate[dateKey]?.some(
                       (s) => s.id === slot.id

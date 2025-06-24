@@ -1,4 +1,4 @@
-import { getMasterDetailsApi, getRoomListApi, roomBookingApi, getRoomDetailsApi, getAvilableSlotApi } from "../../api/requests/protected";
+import { getMasterDetailsApi, getRoomListApi, roomBookingApi, getRoomDetailsApi, getAvilableSlotApi, getRoomPackagesApi, getRoomDropdownListApi } from "../../api/requests/protected";
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
@@ -8,6 +8,8 @@ const initialState = {
   masterList: [],
   roomDetails: {},
   availableSlots: [],
+  roomPackages: [],
+  roomListDropDown: [],
 };
 
 export const getRoomList = createAsyncThunk("room/list", async (jsonData, thunkAPI) => {
@@ -54,6 +56,24 @@ export const getAvailableSlots = createAsyncThunk("room/availableSlots", async (
     return data;
   } catch (error) {
     return thunkAPI.rejectWithValue(error?.message || "Failed to fetch available slots.");
+  }
+});
+
+export const getRoomPackages = createAsyncThunk("room/packages", async (roomId, thunkAPI) => {
+  try {
+    const data = await getRoomPackagesApi(roomId);
+    return data;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error?.message || "Failed to fetch room packages.");
+  }
+});
+
+export const getRoomDropdownList = createAsyncThunk("room/dropdownList", async (_, thunkAPI) => {
+  try {
+    const data = await getRoomDropdownListApi();
+    return data;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error?.message || "Failed to fetch room dropdown list.");
   }
 });
 
@@ -113,7 +133,28 @@ const userSlice = createSlice({
       })
       .addCase(getAvailableSlots.rejected, (state) => {
         state.isLoading = false;
+      })
+      .addCase(getRoomPackages.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(getRoomPackages.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.roomPackages = action.payload;
+      })
+      .addCase(getRoomPackages.rejected, (state) => {
+        state.isLoading = false;
+      })
+      .addCase(getRoomDropdownList.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(getRoomDropdownList.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.roomListDropDown = action.payload; // Assuming the dropdown list is similar to room list
+      })
+      .addCase(getRoomDropdownList.rejected, (state) => {
+        state.isLoading = false;
       });
+
   },
 });
 
