@@ -385,24 +385,45 @@ const Booking = () => {
               >
                 <Card.Body>
                   <Row className="justify-content-between align-items-center g-2">
-                    <Col xs={12} xl={5}>
-                      <div className="d-flex align-items-center mb-2 mb-md-0">
-                        <span style={{ fontSize: "1.3rem", marginRight: 8 }}>📅</span>
-                        <span className="fw-bold" style={{ fontSize: "1rem" }}>
-                          23 June 2025
-                        </span>
-                      </div>
-                    </Col>
-                    <Col xs={12} xl={4}>
-                      <div className="d-flex align-items-center justify-content-md-end">
-                        <span style={{ fontSize: "1.2rem", marginRight: 8 }}>🕒</span>
-                        <span
-                          className="badge bg-light text-dark border"
-                          style={{ fontSize: "0.9rem" }}
+                    <Col xs={12}>
+                      {selectedSlotsByDategrid.map((booking, index) => (
+                        <div
+                          key={index}
+                          className="d-flex flex-wrap align-items-center justify-content-between mb-2 row-gap-3"
                         >
-                          2:31 AM - 4:30 AM
-                        </span>
-                      </div>
+                          {/* Date */}
+                          <div
+                            className="d-flex align-items-center"
+                            style={{ minWidth: "160px" }}
+                          >
+                            <span
+                              style={{ fontSize: "1.3rem", marginRight: 8 }}
+                            >
+                              📅
+                            </span>
+                            <span
+                              className="fw-bold"
+                              style={{ fontSize: "1rem" }}
+                            >
+                              {moment(booking.date).format("DD-MM-YYYY")}
+                            </span>
+                          </div>
+
+                          {/* Time Slots */}
+                          <div className="d-flex flex-wrap align-items-center gap-2 justify-content-end">
+                            <span style={{ fontSize: "1.2rem" }}>🕒</span>
+                            {booking.startTimes.map((time, timeIndex) => (
+                              <span
+                                key={timeIndex}
+                                className="p-2 border rounded bg-light text-nowrap"
+                                style={{ fontSize: "0.9rem" }}
+                              >
+                                {formatTimeRange(time)}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </Col>
                   </Row>
                 </Card.Body>

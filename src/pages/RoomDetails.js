@@ -1,5 +1,5 @@
 // RoomDetails.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Container, Card, Row, Col } from "react-bootstrap";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
@@ -27,7 +27,10 @@ const RoomDetails = () => {
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
   const { roomDetails, availableSlots } = useSelector((state) => state.rooms);
-  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [isSwiperReady, setIsSwiperReady] = useState(false);
+  const [swiperInstance, setSwiperInstance] = useState(null);
+  const prevRef = useRef(null);
+  const nextRef = useRef(null);
 
   useEffect(() => {
     if (id) {
@@ -39,22 +42,38 @@ const RoomDetails = () => {
     dispatch(getMasterDetails("EventType"));
   }, [dispatch]);
 
-  useEffect(() => {
-    console.log("Location state:sfbsdmf", location.state);
-  }, [location.state]);
+  useEffect(() => {}, [location.state]);
 
   useEffect(() => {
     if (roomDetails?.id) {
       const today = new Date().toISOString().split("T")[0];
-      console.log(
-        "Fetching available slots for room:",
-        roomDetails.id,
-        "on date:",
-        today
-      );
       dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: today }));
     }
   }, [roomDetails?.id, dispatch]);
+
+  useEffect(() => {
+    if (prevRef.current && nextRef.current) {
+      setIsSwiperReady(true);
+    }
+  }, [prevRef.current, nextRef.current]);
+
+  const roomImages = roomDetails?.roomImagePath || [];
+  let extendedImages = roomImages;
+  if (roomImages.length === 2 || roomImages.length === 3) {
+    extendedImages = [...roomImages, ...roomImages];
+  }
+  const isSingleImage = roomImages.length === 1;
+  const showNavigation = extendedImages.length > 1;
+
+  // useEffect(() => {
+  //   if (roomDetails?.roomImagePath?.length > 1) {
+  //     const updatedRoom = {
+  //       ...roomDetails,
+  //       roomImagePath: [roomDetails.roomImagePath[0]],
+  //     };
+  //     dispatch(setRoomDetails(updatedRoom));
+  //   }
+  // }, [roomDetails?.roomImagePath, dispatch]);
 
   const mainroom = [
     {
@@ -89,140 +108,145 @@ const RoomDetails = () => {
             padding: "50px 0",
             overflow: "hidden",
             backgroundColor: "#F5F5EE",
-            height: "1000px",
+            height: isSingleImage ? "auto" : "1000px",
             position: "relative",
           }}
           className="mainslider"
         >
-          {/* Custom Navigation */}
-          {/* <div>
-            <div
-              className="custom-prev"
-              style={{
-                position: "absolute",
-                bottom: "25%",
-                right: "20%",
-                zIndex: 10,
-              }}
-            >
-              <button className="sliderbtn-add">
-                <MdArrowLeft />
-              </button>
-            </div>
-            <div
-              className="custom-next"
-              style={{
-                position: "absolute",
-                bottom: "25%",
-                right: "15%",
-                zIndex: 10,
-              }}
-            >
-              <button className="sliderbtn-add">
-                <MdArrowRight />
-              </button>
-            </div>
-          </div> */}
+          {/* Custom Navigation Buttons */}
+          {showNavigation && (
+            <>
+              <div
+                className="custom-prev"
+                style={{
+                  position: "absolute",
+                  bottom: "25%",
+                  right: "20%",
+                  zIndex: 10,
+                }}
+              >
+                <button className="sliderbtn-add" ref={prevRef}>
+                  <MdArrowLeft />
+                </button>
+              </div>
+              <div
+                className="custom-next"
+                style={{
+                  position: "absolute",
+                  bottom: "25%",
+                  right: "15%",
+                  zIndex: 10,
+                }}
+              >
+                <button className="sliderbtn-add" ref={nextRef}>
+                  <MdArrowRight />
+                </button>
+              </div>
+            </>
+          )}
 
-          <Swiper
-            slidesPerView={3}
-            centeredSlides={true}
-            spaceBetween={30}
-            onSlideChange={(swiper) => {
-              setActiveIndex(swiper.realIndex);
-            }}
-            loop={true}
-            autoplay={{
-              delay: 5000,
-              disableOnInteraction: true,
-              pauseOnMouseEnter: true, 
-              reverseDirection: true, 
-            }}
-            modules={[Autoplay]}
-            style={{
-              padding: "0 20px",
-              overflow: "visible",
-            }}
-            breakpoints={{
-              1200: {
-                slidesPerView: 3,
-                spaceBetween: 30,
-              },
-              768: {
-                slidesPerView: 2,
-                spaceBetween: 20,
-              },
-              320: {
-                slidesPerView: 1,
-                spaceBetween: 30,
-              },
-            }}
-          >
-            {roomDetails && roomDetails?.roomImagePath?.length > 0 ? (
-              roomDetails?.roomImagePath?.map((room, index) => {
-                const isActive = index === activeIndex;
-                let imgSrc = room ? URLS.Image_Url + room : noImage;
-                return (
-                  <SwiperSlide
-                    key={index}
-                    style={{
-                      transform: isActive ? "scale(1)" : "scale(0.9)",
-                      height: isActive ? "620px" : "580px",
-                      transition: "transform 0.7s ease, height 0.5s ease",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "flex-end",
-                      position: "relative",
-                    }}
-                  >
-                    <img
-                      src={imgSrc}
-                      alt={roomDetails?.roomName}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderRadius: "16px",
-                        borderTopLeftRadius: isActive ? "100px" : "16px",
-                        borderBottomRightRadius: isActive ? "100px" : "16px",
-                        border: isActive
-                          ? "2px solid black"
-                          : "2px solid transparent",
-                      }}
-                      className={isActive ? "add" : ""}
-                      onError={() => {
-                        imgSrc = noImage;
-                      }}
-                    />
-                  </SwiperSlide>
-                );
-              })
-            ) : (
-              <SwiperSlide key={0} style={{ height: "620px" }}>
+          {(isSingleImage || isSwiperReady) &&
+            (isSingleImage ? (
+              <div className="single-image-container">
                 <img
-                  src={noImage}
+                  src={
+                    roomImages[0]
+                      ? roomImages[0].startsWith("http")
+                        ? roomImages[0]
+                        : URLS.Image_Url + roomImages[0]
+                      : noImage
+                  }
                   alt={roomDetails?.roomName}
                   style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
+                    width: "50%",
+                    height: "auto",
                     borderRadius: "16px",
+                    margin: "0 auto",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
                   }}
-                  className={"add"}
                 />
-              </SwiperSlide>
-            )}
-          </Swiper>
+              </div>
+            ) : (
+              <Swiper
+                onSwiper={setSwiperInstance}
+                slidesPerView={1}
+                centeredSlides={true}
+                spaceBetween={30}
+                loop={extendedImages.length > 1}
+                navigation={
+                  showNavigation
+                    ? {
+                        prevEl: prevRef.current,
+                        nextEl: nextRef.current,
+                      }
+                    : false
+                }
+                modules={[Navigation]}
+                style={{
+                  padding: "0 20px",
+                  overflow: "visible",
+                }}
+                breakpoints={{
+                  1200: {
+                    slidesPerView: extendedImages.length > 1 ? 3 : 1,
+                    spaceBetween: 30,
+                  },
+                  768: {
+                    slidesPerView: extendedImages.length > 1 ? 2 : 1,
+                    spaceBetween: 20,
+                  },
+                  320: { slidesPerView: 1, spaceBetween: 30 },
+                }}
+                onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
+              >
+                {extendedImages.map((room, index) => {
+                  const isActive = index === activeIndex;
+                  let imgSrc = room ? URLS.Image_Url + room : noImage;
+                  return (
+                    <SwiperSlide
+                      key={index}
+                      style={{
+                        transform: isActive ? "scale(1)" : "scale(0.9)",
+                        height: isActive ? "620px" : "580px",
+                        transition: "transform 0.7s ease, height 0.5s ease",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "flex-end",
+                        position: "relative",
+                      }}
+                    >
+                      <img
+                        src={imgSrc}
+                        alt={roomDetails?.roomName}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          borderRadius: "16px",
+                          borderTopLeftRadius: isActive ? "100px" : "16px",
+                          borderBottomRightRadius: isActive ? "100px" : "16px",
+                          border: isActive
+                            ? "2px solid black"
+                            : "2px solid transparent",
+                        }}
+                      />
+                    </SwiperSlide>
+                  );
+                })}
+              </Swiper>
+            ))}
 
-          {/* STATIC TEXT SECTION (not sliding) */}
+          {/* Static text section */}
           <div
             style={{
-              position: "absolute",
-              bottom: "20px",
-              left: "35%",
-              bottom: "6%",
+              position: isSingleImage ? "unset" : "absolute",
+              bottom: isSingleImage ? "unset" : "6%",
+              left: isSingleImage ? "unset" : "35%",
               padding: "20px",
-              maxWidth: "33%",
+              maxWidth: isSingleImage ? "50%" : "33%",
+              margin: isSingleImage ? "0 auto" : "unset",
             }}
             className="responsivslider"
           >
@@ -240,6 +264,7 @@ const RoomDetails = () => {
         </div>
       </section>
 
+      {/* Booking Calendar Section */}
       <section>
         <Container>
           <div className="bookingdesign">
@@ -248,6 +273,7 @@ const RoomDetails = () => {
         </Container>
       </section>
 
+      {/* Discover Section */}
       <section>
         <div className="herobgone">
           <Container className="my-sm-5 mb-5 mb-sm-0">

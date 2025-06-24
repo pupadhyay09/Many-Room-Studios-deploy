@@ -33,6 +33,11 @@
   font-family: "CormorantGaramond", serif;
 }
 
+html,
+body {
+  scroll-behavior: auto !important;
+}
+
 .addrightline {
   position: relative;
   min-height: 60px;
@@ -798,7 +803,6 @@
   height: auto;
 }
 
-
 @media only screen and (max-width: 1210px) {
   .date-time-container {
     flex-direction: column;
@@ -825,9 +829,9 @@
     left: 30% !important;
   }
 
-  .booking-details-card .d-flex {
+  /* .booking-details-card .d-flex {
     justify-content: flex-start !important;
-  }
+  } */
 }
 
 @media only screen and (max-width: 992px) {
@@ -865,6 +869,11 @@
 
   .herobgone {
     padding: 20px 0;
+  }
+
+  .single-image-container img {
+    width: 96% !important;
+    padding: 0 1rem !important;
   }
 }
 

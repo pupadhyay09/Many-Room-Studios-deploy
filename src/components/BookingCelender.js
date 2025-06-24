@@ -1,55 +1,32 @@
 import React, { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { Container, Row, Col, Button, Form } from "react-bootstrap";
+import { Container, Row, Col, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import images from "../assets/images/Images";
 import { FaClock } from "react-icons/fa";
-import { IoMdArrowRoundBack } from "react-icons/io";
 import { GrFormNextLink } from "react-icons/gr";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { getAvailableSlots } from "../redux/slices/rooms";
-import { FaEdit, FaTrash, FaSave } from "react-icons/fa";
-import TimeEditModal from "./TimeEditModal";
 
 const BookingCalendar = ({ availableSlots }) => {
-  const [step, setStep] = useState(1);
-  const [selectedDates, setSelectedDates] = useState([]); // Make it an array
-  const [selectedSlotsByDate, setSelectedSlotsByDate] = useState({}); // { '2025-06-04': [slotId1, slotId2] }
+  const [selectedDates, setSelectedDates] = useState([]);
+  const [selectedSlotsByDate, setSelectedSlotsByDate] = useState({});
   const [currentDate, setCurrentDate] = useState(new Date());
   const [people, setPeople] = useState("");
   const [eventType, setEventType] = useState(0);
-  const [transitioning, setTransitioning] = useState(false);
-  const [visibleStep, setVisibleStep] = useState(1);
-  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
-  const [editModalIndex, setEditModalIndex] = useState(null);
   const { roomDetails } = useSelector((state) => state.rooms);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const preFeildData = localStorage.getItem("bookingFormData");
-    if (preFeildData) {
-      const formData = JSON.parse(preFeildData);
-      console.log('formData===>', formData);
-      goToStep(3);
-      if (formData.gridbookingSlotListByDate) {
-        setSelectedSlotsByDate(formData.gridbookingSlotListByDate);
-      }
-      if (formData.people) setPeople(formData.people);
-      if (formData.eventType) setEventType(formData.eventType);
-      if (formData.selectedDates && Array.isArray(formData.selectedDates)) {
-        setSelectedDates(
-          formData.selectedDates.map((dateStr) => {
-            const dateObj = new Date(dateStr);
-            return dateObj;
-          })
-        );
-      }
+    if (roomDetails?.id) {
+      const today = new Date();
+      const todayStr = formatDate(today);
+      dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: todayStr }));
     }
-  }, []);
-
+  }, [roomDetails?.id, dispatch]);
 
   const formatDate = (date) => {
     const year = date.getFullYear();
@@ -71,124 +48,55 @@ const BookingCalendar = ({ availableSlots }) => {
   };
 
   const handleDateSelect = async (date) => {
-    if (roomDetails?.id) {
-      const dateKey = formatDate(date);
-      await dispatch(
-        getAvailableSlots({ id: roomDetails.id, bookingDate: dateKey })
-      );
-    }
+    const dateKey = formatDate(date);
     setCurrentDate(date);
+    setSelectedDates([date]);
+    setSelectedSlotsByDate({}); // clear previous selection
+    if (roomDetails?.id) {
+      await dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: dateKey }));
+    }
   };
 
   const handleTimeSelect = (dateKey, slot) => {
-    setSelectedSlotsByDate((prev) => {
-      const prevSlots = prev[dateKey] || [];
-      const isAlreadySelected = prevSlots.some((s) => s.id === slot.id);
-      const updatedSlots = isAlreadySelected
-        ? prevSlots.filter((s) => s.id !== slot.id) // Deselect
-        : [...prevSlots, slot]; // Select
-
-      const newSelectedSlots = { ...prev, [dateKey]: updatedSlots };
-
-      if (updatedSlots.length === 0) {
-        delete newSelectedSlots[dateKey];
-        setSelectedDates((prevDates) =>
-          prevDates.filter((d) => formatDate(d) !== dateKey)
-        );
-      } else {
-        setSelectedDates((prevDates) => {
-          const isDateSelected = prevDates.some(
-            (d) => formatDate(d) === dateKey
-          );
-          return isDateSelected ? prevDates : [...prevDates, new Date(dateKey)];
-        });
-      }
-
-      return newSelectedSlots;
-    });
-  };
-
-  const handleNext = () => {
-    goToStep(3);
-  };
-
-  const goBack = () => {
-    if (step > 1) {
-      goToStep(step - 1);
+    const isAlreadySelected = selectedSlotsByDate[dateKey]?.[0]?.id === slot.id;
+    if (isAlreadySelected) {
+      setSelectedSlotsByDate({});
+      setSelectedDates([]);
+    } else {
+      setSelectedSlotsByDate({ [dateKey]: [slot] });
+      setSelectedDates([new Date(dateKey)]);
     }
   };
 
-  const goToStep = (newStep) => {
-    setTransitioning(true);
-    setTimeout(() => {
-      setVisibleStep(newStep);
-      setTransitioning(false);
-    }, 300);
-  };
+  const handleBooking = () => {
+    if (selectedDates.length !== 1) return;
 
-  useEffect(() => {
-    setStep(visibleStep);
-  }, [visibleStep]);
+    const date = selectedDates[0];
+    const dateKey = formatDate(date);
+    const slot = selectedSlotsByDate[dateKey]?.[0];
+    if (!slot) return;
 
-  const handleDeleteDateRow = (dateKey) => {
-    setSelectedSlotsByDate((prev) => {
-      const updated = { ...prev };
-      delete updated[dateKey];
-      return updated;
-    });
-    setSelectedDates((prev) => prev.filter((d) => formatDate(d) !== dateKey));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    let newErrors = {};
-
-    // Remove required validation for people and eventType
-    // if (!people) newErrors.people = "Number of people is required.";
-    if (people && Number(people) > Number(roomDetails?.capacity)) {
-      newErrors.people = `Number of people cannot exceed room capacity (${roomDetails?.capacity})`;
-    }
-
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
+    const [start, end] = slot.name.split("-");
+    const startDate = `${dateKey}T${start}:00.000Z`;
+    const endDate = `${dateKey}T${end}:00.000Z`;
 
     const eventTypeObj = roomDetails?.roomEventsList?.find(
       (opt) => String(opt.value) === String(eventType)
     );
     const eventTypeName = eventTypeObj ? eventTypeObj.text : "";
 
-    const bookingSlotList = selectedDates.flatMap((date) => {
-      const dateKey = formatDate(date);
-      const slots = selectedSlotsByDate[dateKey] || [];
-      return slots.map((slot) => {
-        const [start, end] = slot.name.split("-");
-        const startDate = `${formatDate(date)}T${start}:00.000Z`;
-        const endDate = `${formatDate(date)}T${end}:00.000Z`;
-
-        return {
-          startDate: startDate,
-          endDate: endDate,
-          roomSlotID: slot.id,
-        };
-      });
-    });
-
-    // Handle empty bookingSlotList
-    let startDateTime = "";
-    let endDateTime = "";
-    if (bookingSlotList.length > 0) {
-      const allStartDates = bookingSlotList.map((s) => new Date(s.startDate));
-      const allEndDates = bookingSlotList.map((s) => new Date(s.endDate));
-      startDateTime = new Date(Math.min(...allStartDates)).toISOString();
-      endDateTime = new Date(Math.max(...allEndDates)).toISOString();
-    }
-
     const bookingFormData = {
       franchiseeAdminID: roomDetails?.franchiseeAdminID,
       roomID: roomDetails?.id,
-      bookingSlotList,
-      startDateTime,
-      endDateTime,
+      bookingSlotList: [
+        {
+          startDate,
+          endDate,
+          roomSlotID: slot.id,
+        },
+      ],
+      startDateTime: startDate,
+      endDateTime: endDate,
       people: people ? Number(people) : undefined,
       eventType,
       eventTypeName,
@@ -199,307 +107,105 @@ const BookingCalendar = ({ availableSlots }) => {
       discountPercentage: roomDetails?.discountPercentage,
       taxes: roomDetails?.vatPercentage,
       ownership: roomDetails?.ownershipTypeName,
-      gridbookingSlotListByDate: selectedSlotsByDate,
-      selectedDates
+      gridbookingSlotListByDate: { [dateKey]: [slot] },
+      selectedDates: [date],
     };
 
     localStorage.setItem("bookingFormData", JSON.stringify(bookingFormData));
     navigate("/booking", { state: bookingFormData });
   };
 
-  console.log("roomDetails===>", roomDetails);
-
-  const selectedSlotsByDategrid = Object.entries(selectedSlotsByDate).map(
-    ([date, slots]) => ({
-      date,
-      startTimes: slots.map((slot) => slot.name),
-      qty: slots,
-      unit: roomDetails?.hourlyPrice?.toFixed(2), // or your actual unit if dynamic
-      price: (slots.length * roomDetails?.hourlyPrice)?.toFixed(2), // Example logic
-    })
-  );
-
   return (
     <Container className="booking-wrapper">
       <Row className="booking-card">
         <Col md={5} className="left-panel">
-          <Row>
-            <Col md={1}>
-              {step === 3 && (
-                <IoMdArrowRoundBack
-                  variant="link"
-                  className="back-button p-0 mb-3"
-                  onClick={goBack}
-                />
-              )}
-            </Col>
-            <Col md={11}>
-              <img src={images.logo} alt="celender logo" className="mb-3" />
-              <p className="mb-0 roomtext">Many Rooms Studio</p>
-              {/* <h1>INTERVAL BOOKING</h1> */}
-              <div className="mt-3">
-                <p className="clockicontext">
-                  <FaClock /> 30 min
-                </p>
-                <h3 className="mb-0">Deluxe Studio Room</h3>
-              </div>
-              <p>
-                Experience comfort and luxury in our Deluxe Studio Room,
-                designed for relaxation with modern amenities and elegant style.
-              </p>
-            </Col>
-          </Row>
+          <img src={images.logo} alt="celender logo" className="mb-3" />
+          <p className="mb-0 roomtext">Many Rooms Studio</p>
+          <div className="mt-3">
+            <p className="clockicontext">
+              <FaClock /> 30 min
+            </p>
+            <h3 className="mb-0">Deluxe Studio Room</h3>
+          </div>
+          <p>
+            Experience comfort and luxury in our Deluxe Studio Room, designed for
+            relaxation with modern amenities and elegant style.
+          </p>
         </Col>
 
         <Col md={7} className="right-panel">
-          {step < 3 && (
-            <div className="date-time-container d-flex">
-              <div className="custom-booking-datepicker">
-                <h4 className="ms-3">Select Dates</h4>
-                <DatePicker
-                  selected={currentDate}
-                  onChange={handleDateSelect}
-                  highlightDates={selectedDates}
-                  includeDates={(() => {
-                    const dates = [];
-                    const today = new Date();
-                    const endDate = new Date(today);
-                    endDate.setMonth(today.getMonth() + 3);
+          <div className="date-time-container d-flex">
+            <div className="custom-booking-datepicker">
+              <h4 className="ms-3">Select Date</h4>
+              <DatePicker
+                selected={currentDate}
+                onChange={handleDateSelect}
+                highlightDates={selectedDates}
+                includeDates={(() => {
+                  const dates = [];
+                  const today = new Date();
+                  const endDate = new Date(today);
+                  endDate.setMonth(today.getMonth() + 3);
+                  for (
+                    let d = new Date(today);
+                    d <= endDate;
+                    d.setDate(d.getDate() + 1)
+                  ) {
+                    dates.push(new Date(d));
+                  }
+                  return dates;
+                })()}
+                inline
+                minDate={new Date()}
+                openToDate={currentDate}
+                dayClassName={(date) => {
+                  const isSelected = selectedDates.some(
+                    (d) => d.toDateString() === date.toDateString()
+                  );
+                  return isSelected ? "selected-multi" : "";
+                }}
+              />
+            </div>
 
-                    for (
-                      let d = new Date(today);
-                      d <= endDate;
-                      d.setDate(d.getDate() + 1)
-                    ) {
-                      dates.push(new Date(d));
-                    }
-                    return dates;
-                  })()}
-                  inline
-                  minDate={new Date()}
-                  openToDate={currentDate} // <-- Yahan currentDate use karein
-                  dayClassName={(date) => {
-                    // const isToday = date.toDateString() === new Date().toDateString();
-                    const isSelected = selectedDates.some(
-                      (d) => d.toDateString() === date.toDateString()
+            <div className="time-select-wrapper w-100">
+              {currentDate && (
+                <div className="time-grid time-grid-scrollable">
+                  {availableSlots.map((slot) => {
+                    const dateKey = formatDate(currentDate);
+                    const isSelected = selectedSlotsByDate[dateKey]?.some(
+                      (s) => s.id === slot.id
                     );
-                    // if (isToday) return "datepicker-today";
-                    if (isSelected) return "selected-multi";
-                    return "";
-                  }}
-                />
-              </div>
 
-              <div
-                className={`fade-step w-100 ${transitioning ? "fade-out" : ""}`}
-              >
-                {currentDate && (
-                  <div className="time-select-wrapper">
-                    <div className="time-grid time-grid-scrollable">
-                      {availableSlots.map((slot) => {
-                        const dateKey = formatDate(currentDate);
-                        const isSelected = selectedSlotsByDate[dateKey]?.some(
-                          (s) => s.id === slot.id
-                        );
+                    return (
+                      <Button
+                        key={slot.id}
+                        variant={isSelected ? "primary" : "outline-primary"}
+                        className="time-btn py-3 w-100 mb-2"
+                        onClick={() => handleTimeSelect(dateKey, slot)}
+                      >
+                        {formatTimeRange(slot.name)}
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
 
-                        return (
-                          <Button
-                            key={slot.id}
-                            variant={isSelected ? "primary" : "outline-primary"}
-                            className="time-btn py-3 w-100 mb-2"
-                            onClick={() => handleTimeSelect(dateKey, slot)}
-                          >
-                            {formatTimeRange(slot.name)}
-                          </Button>
-                        );
-                      })}
-                    </div>
+              {Object.keys(selectedSlotsByDate).length > 0 &&
+                selectedDates.length === 1 && (
+                  <div className="d-flex justify-content-end mt-3">
+                    <Button
+                      onClick={handleBooking}
+                      className="next-btn py-3 w-100 me-4"
+                      variant="success"
+                    >
+                      Next <GrFormNextLink />
+                    </Button>
                   </div>
                 )}
-                {selectedSlotsByDate &&
-                  Object.keys(selectedSlotsByDate).length > 0 && (
-                    <div className="d-flex justify-content-end mt-3">
-                      <Button
-                        onClick={handleNext}
-                        className="next-btn py-3 w-100 me-4"
-                        variant="success"
-                      >
-                        Next <GrFormNextLink />
-                      </Button>
-                    </div>
-                  )}
-              </div>
             </div>
-          )}
-
-          {step === 3 && (
-            <Form className="form-grid" onSubmit={handleSubmit}>
-              <Row className="justify-content-between">
-                {/* <Col md={5}>
-                  <Form.Group className="mb-4">
-                    <Form.Label>
-                      Number of People max({roomDetails?.capacity})
-                    </Form.Label>
-                    <Form.Control
-                      placeholder="Number"
-                      type="number"
-                      value={people}
-                      max={roomDetails?.capacity?.toString()}
-                      onChange={(e) => {
-                        let val = e.target.value;
-                        if (
-                          roomDetails?.capacity &&
-                          Number(val) > Number(roomDetails.capacity)
-                        ) {
-                          val = roomDetails.capacity.toString();
-                        }
-                        setPeople(val);
-                        setErrors((prev) => ({ ...prev, people: "" }));
-                      }}
-                    />
-                    {errors.people && (
-                      <div className="text-danger mt-1">{errors.people}</div>
-                    )}
-                  </Form.Group>
-                </Col> */}
-
-                {/* <Col md={5}>
-                  <Form.Group className="mb-4">
-                    <Form.Label>Event Type</Form.Label>
-                    <Form.Select
-                      value={eventType}
-                      onChange={(e) => {
-                        setEventType(e.target.value);
-                      }}
-                    >
-                      <option value="">Select</option>
-                      {roomDetails?.roomEventsList?.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.text}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                </Col> */}
-                <Col lg={12}>
-                  {/* <h5 className="mb-3">Booking Summary</h5> */}
-                  <div className="table-responsive">
-                    <table className="table table-bordered table-striped mb-0">
-                      <thead className="table-dark">
-                        <tr>
-                          <th style={{ whiteSpace: "nowrap" }}>Date</th>
-                          <th style={{ whiteSpace: "nowrap" }}>Time</th>
-                          <th style={{ whiteSpace: "nowrap" }} className="d-sm-table-cell">Unit</th>
-                          <th style={{ whiteSpace: "nowrap" }} className="d-sm-table-cell">Price</th>
-                          <th style={{ whiteSpace: "nowrap" }}>Manage</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedSlotsByDategrid.map((booking, groupIdx) =>
-                          booking.qty.map((slot, slotIdx) => {
-                            // Calculate absolute row index for zebra striping
-                            const rowIndex = selectedSlotsByDategrid
-                              .slice(0, groupIdx)
-                              .reduce((acc, b) => acc + b.qty.length, 0) + slotIdx;
-                            const rowClass = slotIdx % 2 === 0 ? "table-row-even" : "table-row-odd";
-                            const dateActionBg = groupIdx % 2 === 0 ? "date-action-even" : "date-action-odd";
-                            console.log('groupIdx===>', groupIdx)
-                            return (
-                              <tr key={slot.id} className={rowClass}>
-                                {slotIdx === 0 ? (
-                                  <td
-                                    rowSpan={booking.qty.length}
-                                    className={`date-action-cell ${dateActionBg}`}
-                                    style={{
-                                      verticalAlign: "middle",
-                                      fontWeight: "bold",
-                                      whiteSpace: "nowrap",
-                                    }}
-                                  >
-                                    {booking.date}
-                                  </td>
-                                ) : null}
-                                <td style={{ whiteSpace: "nowrap" }}>{formatTimeRange(slot.name)}</td>
-                                <td className="d-sm-table-cell" style={{ whiteSpace: "nowrap" }}>£{booking.unit}</td>
-                                <td className="d-sm-table-cell" style={{ whiteSpace: "nowrap" }}>£{booking.unit}</td>
-                                {slotIdx === 0 ? (
-                                  <td
-                                    rowSpan={booking.qty.length}
-                                    className={`date-action-cell ${dateActionBg}`}
-                                    style={{ verticalAlign: "middle" }}
-                                  >
-                                    <div className="set-table-btn d-flex gap-2 flex-wrap">
-                                      <Button
-                                        variant="outline-primary"
-                                        size="sm"
-                                        onClick={async () => {
-                                          await dispatch(
-                                            getAvailableSlots({
-                                              id: roomDetails.id,
-                                              bookingDate: booking.date,
-                                            })
-                                          );
-                                          goBack();
-                                          setCurrentDate(new Date(booking.date));
-                                        }}
-                                      >
-                                        <FaEdit size={16} />
-                                      </Button>
-                                      <Button
-                                        variant="outline-danger"
-                                        size="sm"
-                                        onClick={() => handleDeleteDateRow(booking.date)}
-                                      >
-                                        <FaTrash size={16} />
-                                      </Button>
-                                    </div>
-                                  </td>
-                                ) : null}
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </Col>
-              </Row>
-
-              <div className="form-btn-text">
-                {/* <p className="text-center">
-                  By proceeding, you confirm that you have read and agree to{" "}
-                  <br />
-                  <span className="text-primary">
-                    Many Rooms Studio Terms of Use{" "}
-                  </span>{" "}
-                  and <span className="text-primary">Privacy Notice.</span>
-                </p> */}
-                <Button type="submit" className="submit-btn-form ">
-                  Book your room
-                </Button>
-              </div>
-            </Form>
-          )}
+          </div>
         </Col>
       </Row>
-
-      <div>
-        {editModalIndex !== null && (
-          console.log("selectedSlotsByDategrid", selectedSlotsByDategrid),
-          console.log("editModalIndex", editModalIndex),
-          console.log("selectedSlotsByDate[selectedSlotsByDate]", selectedSlotsByDate),
-          <TimeEditModal
-            show={true}
-            booking={selectedSlotsByDategrid[editModalIndex]}
-            onHide={() => setEditModalIndex(null)}
-            formatTimeRange={formatTimeRange}
-            availableSlots={availableSlots}
-            onChange={(date, slot) => {
-              handleTimeSelect(date, slot);
-            }}
-          />
-        )}
-      </div>
     </Container>
   );
 };
