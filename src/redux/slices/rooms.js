@@ -51,6 +51,7 @@ export const getRoomDetails = createAsyncThunk("room/details", async (id, thunkA
 });
 
 export const getAvailableSlots = createAsyncThunk("room/availableSlots", async ({ id, bookingDate }, thunkAPI) => {
+  console.log('id====>', id)
   try {
     const data = await getAvilableSlotApi(id, bookingDate);
     return data;

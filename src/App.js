@@ -35,7 +35,7 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/rooms/:id"
+          path="/rooms"
           element={
             <PrivateRoute>
               <RoomDetails />

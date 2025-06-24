@@ -11,12 +11,8 @@ const PackagePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const roomId = location.state?.roomID;
-  const { roomPackages, roomListDropDown } = useSelector(
-    (state) => state.rooms
-  );
-  console.log("Room Packages from state:", roomPackages);
-  console.log("Room ID from state:", roomId);
-  const [selectedRoom, setSelectedRoom] = useState(roomId ? roomId : "-1");
+ const { roomPackages, roomListDropDown } = useSelector((state) => state.rooms);
+ const [selectedRoom, setSelectedRoom] = useState(roomId ? roomId : "-1");
 
   useEffect(() => {
     getRoomPackagesList();
@@ -31,7 +27,7 @@ const PackagePage = () => {
   };
 
   return (
-    <Container>
+  <Container>
       <div className="package-page">
         <h1>Book Your Room & Time</h1>
         <RoomTabs
@@ -45,10 +41,10 @@ const PackagePage = () => {
           activeTab={selectedRoom?.toString()}
           onSelect={setSelectedRoom}
         />
-        <PackageCard packages={roomPackages} />
+       <PackageCard packages={roomPackages} onClickBookNow={(pkgId) => { navigate(`/rooms`, { state: { roomId: selectedRoom, pkgId: pkgId } }); }} />
       </div>
     </Container>
-  );
+ );
 };
 
 export default PackagePage;

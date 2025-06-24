@@ -1,7 +1,7 @@
 import React from 'react';
 import { URLS } from '../api/Urls';
 
-const PackageCard = ({ packages }) => {
+const PackageCard = ({ packages,onClickBookNow }) => {
   return (
     <div className="package-grid">
       {packages?.map(pkg => (
@@ -23,9 +23,11 @@ const PackageCard = ({ packages }) => {
             <p className="package-price">
               <strong>{pkg.interval} - ₹{pkg.amount}</strong>
             </p>
-            <button className="book-btn">Book Now</button>
+            <button className="book-btn" onClick={() => { onClickBookNow(pkg.id) }}>
+            {"Book Now"}
+          </button>
           </div>
-        </div>
+</div>
       ))}
     </div>
   );

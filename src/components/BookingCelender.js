@@ -10,23 +10,23 @@ import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { getAvailableSlots } from "../redux/slices/rooms";
 
-const BookingCalendar = ({ availableSlots }) => {
+const BookingCalendar = ({ pkgId }) => {
   const [selectedDates, setSelectedDates] = useState([]);
   const [selectedSlotsByDate, setSelectedSlotsByDate] = useState({});
   const [currentDate, setCurrentDate] = useState(new Date());
   const [people, setPeople] = useState("");
   const [eventType, setEventType] = useState(0);
   const navigate = useNavigate();
-  const { roomDetails } = useSelector((state) => state.rooms);
+  const { roomDetails, availableSlots } = useSelector((state) => state.rooms);
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    if (roomDetails?.id) {
-      const today = new Date();
-      const todayStr = formatDate(today);
-      dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: todayStr }));
-    }
-  }, [roomDetails?.id, dispatch]);
+  console.log('availableSlots====>', availableSlots)
+  // useEffect(() => {
+  //   if (roomDetails?.id) {
+  //     const today = new Date();
+  //     const todayStr = formatDate(today);
+  //     dispatch(getAvailableSlots({ id: pkgId, bookingDate: todayStr }));
+  //   }
+  // }, [roomDetails?.id, dispatch]);
 
   const formatDate = (date) => {
     const year = date.getFullYear();
@@ -53,7 +53,7 @@ const BookingCalendar = ({ availableSlots }) => {
     setSelectedDates([date]);
     setSelectedSlotsByDate({}); // clear previous selection
     if (roomDetails?.id) {
-      await dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: dateKey }));
+      dispatch(getAvailableSlots({ id: pkgId, bookingDate: dateKey }));
     }
   };
 
@@ -179,23 +179,23 @@ const BookingCalendar = ({ availableSlots }) => {
                   }
 
                   {
-                  availableSlots?.map((slot) => {
-                    const dateKey = formatDate(currentDate);
-                    const isSelected = selectedSlotsByDate[dateKey]?.some(
-                      (s) => s.id === slot.id
-                    );
+                    availableSlots?.map((slot) => {
+                      const dateKey = formatDate(currentDate);
+                      const isSelected = selectedSlotsByDate[dateKey]?.some(
+                        (s) => s.id === slot.id
+                      );
 
-                    return (
-                      <Button
-                        key={slot.id}
-                        variant={isSelected ? "primary" : "outline-primary"}
-                        className="time-btn py-3 w-100 mb-2"
-                        onClick={() => handleTimeSelect(dateKey, slot)}
-                      >
-                        {formatTimeRange(slot.name)}
-                      </Button>
-                    );
-                  })}
+                      return (
+                        <Button
+                          key={slot.id}
+                          variant={isSelected ? "primary" : "outline-primary"}
+                          className="time-btn py-3 w-100 mb-2"
+                          onClick={() => handleTimeSelect(dateKey, slot)}
+                        >
+                          {formatTimeRange(slot.name)}
+                        </Button>
+                      );
+                    })}
                 </div>
               )}
 
