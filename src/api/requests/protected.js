@@ -63,7 +63,8 @@ const getRoomDetailsApi = async (id) => {
 
 const getAvilableSlotApi = async (id, bookingDate) => {
   try {
-    const { data } = await withAuthApi.get(`/api/v1/rooms/available/slots?bookingDate=${bookingDate}&roomId=${id}`);
+    // const { data } = await withAuthApi.get(`/api/v1/rooms/available/slots?bookingDate=${bookingDate}&roomId=${id}`);
+    const { data } = await withAuthApi.get(`/api/v1/rooms/available/slots?bookingDate=${bookingDate}&roomPackageId=${id}`);
     return data;
   } catch (error) {
     console.error('Error in getAvilableSlotApi:', error);

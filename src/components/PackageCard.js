@@ -1,6 +1,6 @@
 import { URLS } from '../api/Urls';
 
-const PackageCard = ({ packages }) => {
+const PackageCard = ({ packages, onClickBookNow }) => {
   console.log('Packages:', packages);
   return (
     <div className="package-grid">
@@ -10,7 +10,7 @@ const PackageCard = ({ packages }) => {
           <h3>{pkg.roomPackageName}</h3>
           <p>{pkg.description}</p>
           <p><strong>{pkg.interval} - {pkg.amount}</strong></p>
-          <button className="book-btn">
+          <button className="book-btn" onClick={() => { onClickBookNow(pkg.id) }}>
             {"Book Now"}
           </button>
         </div>

@@ -21,8 +21,8 @@ import noImage from "../assets/images/noimage.png";
 import { compose } from "@reduxjs/toolkit";
 
 const RoomDetails = () => {
-  const { id } = useParams();
   const location = useLocation();
+  const { roomId, pkgId } = location.state;
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -33,21 +33,19 @@ const RoomDetails = () => {
   const nextRef = useRef(null);
 
   useEffect(() => {
-    if (id) {
-      dispatch(getRoomDetails(id));
+    if (roomId) {
+      dispatch(getRoomDetails(roomId));
     }
-  }, [id, dispatch]);
+  }, [roomId, dispatch]);
 
-  useEffect(() => {
-    dispatch(getMasterDetails("EventType"));
-  }, [dispatch]);
-
-  useEffect(() => { }, [location.state]);
+  // useEffect(() => {
+  //   dispatch(getMasterDetails("EventType"));
+  // }, [dispatch]);
 
   useEffect(() => {
     if (roomDetails?.id) {
       const today = new Date().toISOString().split("T")[0];
-      dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: today }));
+      dispatch(getAvailableSlots({ id: pkgId, bookingDate: today }));
     }
   }, [roomDetails?.id, dispatch]);
 
@@ -64,16 +62,6 @@ const RoomDetails = () => {
   }
   const isSingleImage = roomImages.length === 1;
   const showNavigation = extendedImages.length > 1;
-
-  // useEffect(() => {
-  //   if (roomDetails?.roomImagePath?.length > 1) {
-  //     const updatedRoom = {
-  //       ...roomDetails,
-  //       roomImagePath: [roomDetails.roomImagePath[0]],
-  //     };
-  //     dispatch(setRoomDetails(updatedRoom));
-  //   }
-  // }, [roomDetails?.roomImagePath, dispatch]);
 
   const mainroom = [
     {
@@ -268,7 +256,7 @@ const RoomDetails = () => {
       <section>
         <Container>
           <div className="bookingdesign">
-            <BookingCelender availableSlots={availableSlots ? availableSlots : []} />
+            <BookingCelender pkgId={pkgId} />
           </div>
         </Container>
       </section>
