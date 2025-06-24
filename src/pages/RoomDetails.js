@@ -16,13 +16,17 @@ import {
   getRoomDetails,
   setRoomDetails,
   getAvailableSlots,
+  getRoomDropdownList,
+  getRoomPackages,
 } from "../redux/slices/rooms";
 import noImage from "../assets/images/noimage.png";
 import { compose } from "@reduxjs/toolkit";
+import RoomTabs from "../components/RoomTabs";
+import PackageCard from "../components/PackageCard";
 
 const RoomDetails = () => {
   const location = useLocation();
-  const { roomId, pkgId } = location.state;
+  const { roomId } = location.state;
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -31,6 +35,10 @@ const RoomDetails = () => {
   const [swiperInstance, setSwiperInstance] = useState(null);
   const prevRef = useRef(null);
   const nextRef = useRef(null);
+  const { roomPackages, roomListDropDown } = useSelector((state) => state.rooms);
+  const [selectedRoom, setSelectedRoom] = useState(roomId ? roomId : "-1");
+  const [isPackage, setIsPackage] = useState(true)
+  const [pkgId, setPackageId] = useState("")
 
   useEffect(() => {
     if (roomId) {
@@ -38,16 +46,22 @@ const RoomDetails = () => {
     }
   }, [roomId, dispatch]);
 
+  useEffect(() => {
+    getRoomPackagesList();
+  }, [dispatch, selectedRoom]);
+
+  // useEffect(() => {
+  //   dispatch(getRoomDropdownList());
+  // }, [dispatch]);
+
+  const getRoomPackagesList = () => {
+    dispatch(getRoomPackages(selectedRoom));
+  };
+
   // useEffect(() => {
   //   dispatch(getMasterDetails("EventType"));
   // }, [dispatch]);
 
-  useEffect(() => {
-    if (roomDetails?.id) {
-      const today = new Date().toISOString().split("T")[0];
-      dispatch(getAvailableSlots({ id: pkgId, bookingDate: today }));
-    }
-  }, [roomDetails?.id, dispatch]);
 
   useEffect(() => {
     if (prevRef.current && nextRef.current) {
@@ -255,9 +269,34 @@ const RoomDetails = () => {
       {/* Booking Calendar Section */}
       <section>
         <Container>
-          <div className="bookingdesign">
-            <BookingCelender pkgId={pkgId} />
-          </div>
+          {isPackage ?
+            <div className="package-page">
+              <h1>Book Your Room & Time</h1>
+              {/* <RoomTabs
+              tabs={[
+                {
+                  value: "-1",
+                  text: "All Rooms",
+                },
+                ...roomListDropDown,
+              ]}
+              activeTab={selectedRoom?.toString()}
+              onSelect={setSelectedRoom}
+            /> */}
+              <PackageCard packages={roomPackages} onClickBookNow={(pkgId) => {
+                console.log('pkgId====>', pkgId)
+                const today = new Date().toISOString().split("T")[0];
+                setPackageId(pkgId)
+                dispatch(getAvailableSlots({ id: pkgId, bookingDate: today }));
+                setIsPackage(false)
+              }} />
+            </div>
+            :
+            <div className="bookingdesign">
+              <BookingCelender pkgId={pkgId} />
+            </div>
+          }
+
         </Container>
       </section>
 

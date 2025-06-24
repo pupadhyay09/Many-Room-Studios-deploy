@@ -88,8 +88,7 @@ const Home = () => {
   const handleBookRoom = (id) => {
     const roomDetails = roomList.find((room) => room.id === id);
     dispatch(setRoomDetails(roomDetails));
-    // navigate(`/rooms/${id}`);
-    navigate(`/packages`, { state: { roomID: id } });
+    navigate(`/rooms`, { state: { roomId: id } })
   };
   return (
     <>

@@ -19,15 +19,7 @@ const BookingCalendar = ({ pkgId }) => {
   const navigate = useNavigate();
   const { roomDetails, availableSlots } = useSelector((state) => state.rooms);
   const dispatch = useDispatch();
-  console.log('availableSlots====>', availableSlots)
-  // useEffect(() => {
-  //   if (roomDetails?.id) {
-  //     const today = new Date();
-  //     const todayStr = formatDate(today);
-  //     dispatch(getAvailableSlots({ id: pkgId, bookingDate: todayStr }));
-  //   }
-  // }, [roomDetails?.id, dispatch]);
-
+ 
   const formatDate = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
