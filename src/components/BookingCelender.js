@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { getAvailableSlots } from "../redux/slices/rooms";
 
-const BookingCalendar = ({ pkgId }) => {
+const BookingCalendar = ({ pkg }) => {
   const [selectedDates, setSelectedDates] = useState([]);
   const [selectedSlotsByDate, setSelectedSlotsByDate] = useState({});
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -19,7 +19,7 @@ const BookingCalendar = ({ pkgId }) => {
   const navigate = useNavigate();
   const { roomDetails, availableSlots } = useSelector((state) => state.rooms);
   const dispatch = useDispatch();
- 
+
   const formatDate = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -45,7 +45,7 @@ const BookingCalendar = ({ pkgId }) => {
     setSelectedDates([date]);
     setSelectedSlotsByDate({}); // clear previous selection
     if (roomDetails?.id) {
-      dispatch(getAvailableSlots({ id: pkgId, bookingDate: dateKey }));
+      dispatch(getAvailableSlots({ id: pkg.id, bookingDate: dateKey }));
     }
   };
 
@@ -62,24 +62,15 @@ const BookingCalendar = ({ pkgId }) => {
 
   const handleBooking = () => {
     if (selectedDates.length !== 1) return;
-
     const date = selectedDates[0];
     const dateKey = formatDate(date);
     const slot = selectedSlotsByDate[dateKey]?.[0];
     if (!slot) return;
-
     const [start, end] = slot.name.split("-");
     const startDate = `${dateKey}T${start}:00.000Z`;
     const endDate = `${dateKey}T${end}:00.000Z`;
 
-    const eventTypeObj = roomDetails?.roomEventsList?.find(
-      (opt) => String(opt.value) === String(eventType)
-    );
-    const eventTypeName = eventTypeObj ? eventTypeObj.text : "";
-
     const bookingFormData = {
-      franchiseeAdminID: roomDetails?.franchiseeAdminID,
-      roomID: roomDetails?.id,
       bookingSlotList: [
         {
           startDate,
@@ -89,18 +80,7 @@ const BookingCalendar = ({ pkgId }) => {
       ],
       startDateTime: startDate,
       endDateTime: endDate,
-      people: people ? Number(people) : undefined,
-      eventType,
-      eventTypeName,
-      roomImagePath: roomDetails?.roomImagePath,
-      roomName: roomDetails?.roomName,
-      location: roomDetails?.location,
-      hourlyPrice: roomDetails?.hourlyPrice,
-      discountPercentage: roomDetails?.discountPercentage,
-      taxes: roomDetails?.vatPercentage,
-      ownership: roomDetails?.ownershipTypeName,
-      gridbookingSlotListByDate: { [dateKey]: [slot] },
-      selectedDates: [date],
+      pkg: pkg
     };
 
     localStorage.setItem("bookingFormData", JSON.stringify(bookingFormData));

@@ -7,19 +7,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { roomBooking } from "../redux/slices/rooms";
 import { URLS } from "../api/Urls";
 import noImage from "../assets/images/noimage.png";
-import moment from "moment";
-
-const to12HourFormat = (time24) => {
-  const [hour, minute] = time24.split(":").map(Number);
-  const ampm = hour >= 12 ? "PM" : "AM";
-  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-  return `${hour12}:${minute.toString().padStart(2, "0")} ${ampm}`;
-};
-
-const formatTimeRange = (range) => {
-  const [start, end] = range.split("-");
-  return `${to12HourFormat(start)} - ${to12HourFormat(end)}`;
-};
 
 function isValidEmail(email) {
   // Simple email regex
@@ -31,12 +18,14 @@ const Booking = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const bookingFormData = location.state || {};
+  const { roomDetails } = useSelector((state) => state.rooms);
+  console.log('bookingFormData====>', bookingFormData)
   const [imgSrc, setImgSrc] = useState(
-    bookingFormData?.roomImagePath?.length > 0
-      ? URLS.Image_Url + bookingFormData?.roomImagePath[0]
+    roomDetails?.roomImagePath?.length > 0
+      ? URLS.Image_Url + roomDetails?.roomImagePath[0]
       : noImage
   );
-  console.log("Booking Form Data:", bookingFormData);
+  console.log("roomDetails Form Data:", roomDetails);
   // Form state
   const [form, setForm] = useState({
     name: "",
@@ -66,23 +55,25 @@ const Booking = () => {
       newErrors.email = "Please enter a valid email address.";
     }
     if (!form.mobileNo) newErrors.mobileNo = "Phone number is required.";
+    if (!/^[0-9]{7,15}$/.test(form.mobileNo)) {
+      newErrors.mobileNo = "Enter a valid phone number.";
+    }
     if (!form.purposeOfHire)
       newErrors.purposeOfHire = "Purpose of hire is required.";
     if (!form.termsAndCondition)
       newErrors.termsAndCondition = "You must accept the terms and conditions.";
-    if (!bookingFormData.roomID) newErrors.roomID = "Room ID missing.";
+    if (!roomDetails.roomID) newErrors.roomID = "Room ID missing.";
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) return;
 
     const data = {
-      franchiseeAdminID: bookingFormData?.franchiseeAdminID,
-      roomEventID: bookingFormData?.eventType,
-      roomID: bookingFormData?.roomID,
+      franchiseeAdminID: roomDetails?.franchiseeAdminID,
+      roomEventID: roomDetails?.eventType,
+      roomID: roomDetails?.roomID,
       bookingStartDateTime: bookingFormData?.startDateTime,
       bookingEndDateTime: bookingFormData?.endDateTime,
-      numberofPeople: bookingFormData?.people,
       name: form?.name,
       email: form?.email,
       purposeOfHire: form?.purposeOfHire,
@@ -115,35 +106,34 @@ const Booking = () => {
     }
   };
 
-  function getHourDiff(start, end) {
-    if (!start || !end) return 0;
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    const diffMs = endDate - startDate;
-    const diffHrs = diffMs / (1000 * 60 * 60);
-    return diffHrs > 0 ? diffHrs : 0;
-  }
+  const taxesPercentage = Number(roomDetails?.taxes) || 0; // taxes as percentage
+  const discountPercentage = Number(roomDetails?.discountPercentage) || 0;
 
-  const hourlyPrice = Number(bookingFormData?.hourlyPrice) || 0;
-  const taxesPercentage = Number(bookingFormData?.taxes) || 0; // taxes as percentage
-  const discountPercentage = Number(bookingFormData?.discountPercentage) || 0;
-  const hours = bookingFormData?.bookingSlotList?.length;
-
-  const roomCost = +(hourlyPrice * hours).toFixed(2);
-  // Both discount and taxes are calculated on base price (roomCost)
+  const roomCost = bookingFormData?.pkg?.amount;
   const discount = +((roomCost * discountPercentage) / 100).toFixed(2);
   const taxes = +((roomCost * taxesPercentage) / 100).toFixed(2);
   const total = +(roomCost - discount + taxes).toFixed(2);
 
-  const selectedSlotsByDategrid = Object.entries(
-    bookingFormData?.gridbookingSlotListByDate
-  ).map(([date, slots]) => ({
-    date,
-    startTimes: slots.map((slot) => slot.name),
-    qty: slots,
-    unit: bookingFormData?.hourlyPrice?.toFixed(2), // or your actual unit if dynamic
-    price: (slots.length * bookingFormData?.hourlyPrice)?.toFixed(2), // Example logic
-  }));
+
+  const formatExactISOString = (isoString) => {
+    const [datePart, timePart] = isoString.split("T");
+    const [year, month, day] = datePart.split("-");
+    const [hourStr, minuteStr] = timePart.split(":");
+
+    const hour = parseInt(hourStr, 10);
+    const minute = minuteStr;
+
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const monthName = monthNames[parseInt(month, 10) - 1];
+
+    return `${day} ${monthName} ${year} ${hour12}:${minute} ${ampm}`;
+  };
 
   return (
     <Container className="bookingbg">
@@ -152,7 +142,6 @@ const Booking = () => {
           <Row className="bookhead justify-content-center">
             <Col md={4}>
               <div className="bookroomimg">
-                {/* <img src={images.room1} alt="Room" /> */}
                 <img
                   src={imgSrc}
                   alt={bookingFormData?.roomName}
@@ -164,9 +153,7 @@ const Booking = () => {
             <Col md={8} className="setborderbo">
               <div className="bookingheadtext">
                 <h3>{bookingFormData?.roomName?.toUpperCase()}</h3>
-                {/* <p>{bookingFormData?.location}</p> */}
-                {/* <h3>SOHO FARMHOUSE</h3> */}
-                <p>Moscow, Russia</p>
+                <p>{roomDetails?.location || "Moscow, Russia"}</p>
               </div>
               <div className="setloctaionmap">
                 <div>
@@ -234,10 +221,15 @@ const Booking = () => {
                     <Col md={12}>
                       <Form.Label>Phone Number</Form.Label>
                       <div style={{ display: "flex", gap: "8px" }}>
-                        <Form.Select style={{ width: "30%" }}>
-                          <option>+44</option>
-                          <option>+91</option>
-                          <option>+1</option>
+                        <Form.Select
+                          name="countryCode"
+                          value={form.countryCode}
+                          onChange={handleChange}
+                          style={{ width: "30%" }}
+                        >
+                          <option value="+44">+44</option>
+                          <option value="+91">+91</option>
+                          <option value="+1">+1</option>
                         </Form.Select>
                         <Form.Control
                           name="mobileNo"
@@ -335,21 +327,6 @@ const Booking = () => {
                 </Form>
               </div>
             </Row>
-
-            {/* <Row className="allpaymetbox">
-              <Col lg={3} sm={6} className="paymetlogo">
-                <img src={images.pay1} alt="payment one" />
-              </Col>
-              <Col lg={3} sm={6} className="paymetlogo">
-                <img src={images.pay2} alt="payment two" />
-              </Col>
-              <Col lg={3} sm={6} className="paymetlogo">
-                <img src={images.pay3} alt="payment three" />
-              </Col>
-              <Col lg={3} sm={6} className="paymetlogo">
-                <img src={images.pay4} alt="payment four" />
-              </Col>
-            </Row> */}
           </Row>
         </Col>
 
@@ -358,185 +335,67 @@ const Booking = () => {
             <h5 className="mb-3 border-bottom pb-2 fw-bold">
               YOUR BOOKING DETAILS
             </h5>
-            {/* <Container className="table-responsive">
-              {selectedSlotsByDategrid?.map((booking) => (
-                <Card className="mb-3 shadow-sm" key={booking.date}>
-                  <Card.Header>
-                    📅 {moment(booking.date).format("DD MMMM YYYY")}
-                  </Card.Header>
-                  <Card.Body>
-                    <Row>
-                      {booking.startTimes.map((time, index) => (
-                        <Col key={index} md={12} className="mb-2">
-                          <div className="p-2 border rounded bg-light">
-                            🕒  {formatTimeRange(time)}
-                          </div>
-                        </Col>
-                      ))}
-                    </Row>
-                  </Card.Body>
-                </Card>
-              ))}
-            </Container> */}
-            <Container>
-              <Card
-                className="mb-3 shadow-sm border-0 booking-details-card"
-                style={{ background: "#f9f9f9", borderRadius: "18px" }}
-              >
-                <Card.Body>
-                  <Row className="justify-content-between align-items-center g-2">
-                    <Col xs={12}>
-                      {selectedSlotsByDategrid.map((booking, index) => (
-                        <div
-                          key={index}
-                          className="d-flex flex-wrap align-items-center justify-content-between mb-2 row-gap-3"
-                        >
-                          {/* Date */}
-                          <div
-                            className="d-flex align-items-center"
-                            style={{ minWidth: "160px" }}
-                          >
-                            <span
-                              style={{ fontSize: "1.3rem", marginRight: 8 }}
-                            >
-                              📅
-                            </span>
-                            <span
-                              className="fw-bold"
-                              style={{ fontSize: "1rem" }}
-                            >
-                              {moment(booking.date).format("DD-MM-YYYY")}
-                            </span>
-                          </div>
 
-                          {/* Time Slots */}
-                          <div className="d-flex flex-wrap align-items-center gap-2 justify-content-end">
-                            <span style={{ fontSize: "1.2rem" }}>🕒</span>
-                            {booking.startTimes.map((time, timeIndex) => (
-                              <span
-                                key={timeIndex}
-                                className="p-2 border rounded bg-light text-nowrap"
-                                style={{ fontSize: "0.9rem" }}
-                              >
-                                {formatTimeRange(time)}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </Col>
-                  </Row>
-                </Card.Body>
-              </Card>
-            </Container>
-            {/* <Col lg={12}>
-              <div className="table-responsive">
-                <table className="table table-bordered table-striped">
-                  <thead className="table-dark">
-                    <tr>
-                      <th>Date</th>
-                      <th>Time</th>
-                      <th>Qty</th>
-                      <th>Unit</th>
-                      <th>Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedSlotsByDategrid.map((booking, index) => (
-                      <tr key={index}>
-                        <td>{booking.date}</td>
-                        <td>
-                          <div
-                            style={{
-                              maxHeight: "37px",
-                              overflowY: "auto",
-                            }}
-                            className="time-scroll-wrapper"
-                          >
-                            {booking.startTimes.map((time, index) => (
-                              <div key={index} className="mb-1">
-                                <span className="py-1 text-nowrap d-inline-block w-100">
-                                  {formatTimeRange(time)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                        <td>{booking.qty.length}</td>
-                        <td>£{booking.unit}</td>
-                        <td>£{booking.price}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="d-flex justify-content-between mb-2">
+              <div>
+                <strong>Room Name</strong>
+                <div className="numbertext">
+                  {roomDetails?.roomName
+                    ? roomDetails?.roomName
+                    : "--"}
+                </div>
               </div>
-            </Col> */}
-
-            {/* <div className="mb-2">
-              <strong>Check in</strong>
-              <div className="numbertext">
-                {bookingFormData.date
-                  ? new Date(bookingFormData.date).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "long", day: "numeric" })
-                  : "--"}
-              </div>
-            </div>
-
-            <div className="mb-2">
-              <strong>Check Out</strong>
-              <div className="numbertext">
-                {bookingFormData.date
-                  ? new Date(bookingFormData.date).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "long", day: "numeric" })
-                  : "--"}
+              <div>
+                <strong>Package Name</strong>
+                <div className="numbertext">
+                  {bookingFormData?.pkg?.roomPackageName
+                    ? bookingFormData?.pkg?.roomPackageName
+                    : "--"}
+                </div>
               </div>
             </div>
 
             <div className="d-flex justify-content-between mb-2">
               <div>
+                <strong>Interval</strong>
+                <div className="numbertext">
+                  {bookingFormData?.pkg?.interval
+                    ? `${bookingFormData?.pkg?.interval} houre`
+                    : "--"}
+                </div>
+              </div>
+              <div>
+                <strong>Amount</strong>
+                <div className="numbertext">
+                  {bookingFormData?.pkg?.amount
+                    ? bookingFormData?.pkg?.amount
+                    : "--"}
+                </div>
+              </div>
+            </div>
+
+
+            <div className="d-flex justify-content-between mb-2">
+              <div>
                 <strong>Start Time</strong>
                 <div className="numbertext">
-                  {bookingFormData.startTime
-                    ? to12HourFormat(bookingFormData.startTime)
+                  {bookingFormData.startDateTime
+                    ? formatExactISOString(bookingFormData.startDateTime)
                     : "--"}
                 </div>
               </div>
               <div>
                 <strong>End Time</strong>
                 <div className="numbertext">
-                  {bookingFormData.endTime
-                    ? to12HourFormat(bookingFormData.endTime)
+                  {bookingFormData.endDateTime
+                    ? formatExactISOString(bookingFormData.endDateTime)
                     : "--"}
                 </div>
               </div>
-            </div> */}
-
-            <div className="d-flex justify-content-between mb-2">
-              <div>
-                <strong>Attendees</strong>
-                <div className="numbertext">
-                  {bookingFormData.people ? bookingFormData.people : "--"}
-                </div>
-              </div>
-              <div>
-                <strong>Event Type</strong>
-                <div className="numbertext">
-                  {bookingFormData.eventTypeName
-                    ? bookingFormData.eventTypeName
-                    : "N/A"}
-                </div>
-              </div>
             </div>
-
             <hr />
 
             <h6 className="mb-3 fw-bold">CHARGES</h6>
-            <div className="d-flex justify-content-between mb-2">
-              <span>Slot Price</span>
-              <span className="pricetext">£ {hourlyPrice.toFixed(2)}</span>
-            </div>
-            <div className="d-flex justify-content-between mb-2">
-              <span>Slots Qty</span>
-              <span className="pricetext">{hours.toString()}</span>
-            </div>
             <div className="d-flex justify-content-between mb-2">
               <span>Room Cost</span>
               <span className="pricetext">£ {roomCost.toFixed(2)}</span>
@@ -563,11 +422,6 @@ const Booking = () => {
               variant="danger"
               className="mb-2 w-100"
               onClick={() => {
-                // navigate(-1, {
-                //   state: {
-                //     ...bookingFormData,
-                //   }
-                // });
                 navigate(-1, { state: bookingFormData });
               }}
             >

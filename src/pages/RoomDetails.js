@@ -38,7 +38,7 @@ const RoomDetails = () => {
   const { roomPackages, roomListDropDown } = useSelector((state) => state.rooms);
   const [selectedRoom, setSelectedRoom] = useState(roomId ? roomId : "-1");
   const [isPackage, setIsPackage] = useState(true)
-  const [pkgId, setPackageId] = useState("")
+  const [pkg, setPackage] = useState("")
 
   useEffect(() => {
     if (roomId) {
@@ -283,17 +283,17 @@ const RoomDetails = () => {
               activeTab={selectedRoom?.toString()}
               onSelect={setSelectedRoom}
             /> */}
-              <PackageCard packages={roomPackages} onClickBookNow={(pkgId) => {
-                console.log('pkgId====>', pkgId)
+              <PackageCard packages={roomPackages} onClickBookNow={(pkg) => {
+                console.log('pkg====>', pkg)
                 const today = new Date().toISOString().split("T")[0];
-                setPackageId(pkgId)
-                dispatch(getAvailableSlots({ id: pkgId, bookingDate: today }));
+                setPackage(pkg)
+                dispatch(getAvailableSlots({ id: pkg.id, bookingDate: today }));
                 setIsPackage(false)
               }} />
             </div>
             :
             <div className="bookingdesign">
-              <BookingCelender pkgId={pkgId} />
+              <BookingCelender pkg={pkg} />
             </div>
           }
 
