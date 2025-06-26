@@ -46,7 +46,9 @@ const Booking = () => {
   };
 
   const handlePayment = async (e) => {
+    console.log('PraveenUpadhhsdgs')
     e.preventDefault();
+    debugger;
     let newErrors = {};
     if (!form.name) newErrors.name = "Name is required.";
     if (!form.email) {
@@ -62,7 +64,7 @@ const Booking = () => {
       newErrors.purposeOfHire = "Purpose of hire is required.";
     if (!form.termsAndCondition)
       newErrors.termsAndCondition = "You must accept the terms and conditions.";
-    if (!roomDetails.roomID) newErrors.roomID = "Room ID missing.";
+    if (!roomDetails.id) newErrors.roomID = "Room ID missing.";
 
     setErrors(newErrors);
 
@@ -71,7 +73,8 @@ const Booking = () => {
     const data = {
       franchiseeAdminID: roomDetails?.franchiseeAdminID,
       roomEventID: roomDetails?.eventType,
-      roomID: roomDetails?.roomID,
+      roomID: roomDetails?.id,
+      roomPackageID: bookingFormData?.pkg?.id,
       bookingStartDateTime: bookingFormData?.startDateTime,
       bookingEndDateTime: bookingFormData?.endDateTime,
       name: form?.name,
@@ -81,12 +84,11 @@ const Booking = () => {
       termsAndCondition: form?.termsAndCondition,
       bookingSlotList: bookingFormData?.bookingSlotList,
     };
-
+    console.log('data====>', data)
     try {
       const action = await dispatch(roomBooking(JSON.stringify(data)));
       console.log("Booking action dispatched:", action);
       if (action.payload?.type === "success") {
-        // Success logic
         const response = action.payload.data;
         if (response && response.stripsessionurl) {
           window.location.href = response.stripsessionurl;
