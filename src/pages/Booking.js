@@ -19,7 +19,7 @@ const Booking = () => {
   const navigate = useNavigate();
   const bookingFormData = location.state || {};
   const { roomDetails } = useSelector((state) => state.rooms);
-  console.log('bookingFormData====>', bookingFormData)
+  console.log("bookingFormData====>", bookingFormData);
   const [imgSrc, setImgSrc] = useState(
     roomDetails?.roomImagePath?.length > 0
       ? URLS.Image_Url + roomDetails?.roomImagePath[0]
@@ -46,7 +46,7 @@ const Booking = () => {
   };
 
   const handlePayment = async (e) => {
-    console.log('PraveenUpadhhsdgs')
+    console.log("PraveenUpadhhsdgs");
     e.preventDefault();
     debugger;
     let newErrors = {};
@@ -84,7 +84,7 @@ const Booking = () => {
       termsAndCondition: form?.termsAndCondition,
       bookingSlotList: bookingFormData?.bookingSlotList,
     };
-    console.log('data====>', data)
+    console.log("data====>", data);
     try {
       const action = await dispatch(roomBooking(JSON.stringify(data)));
       console.log("Booking action dispatched:", action);
@@ -116,7 +116,6 @@ const Booking = () => {
   const taxes = +((roomCost * taxesPercentage) / 100).toFixed(2);
   const total = +(roomCost - discount + taxes).toFixed(2);
 
-
   const formatExactISOString = (isoString) => {
     const [datePart, timePart] = isoString.split("T");
     const [year, month, day] = datePart.split("-");
@@ -129,8 +128,18 @@ const Booking = () => {
     const hour12 = hour % 12 === 0 ? 12 : hour % 12;
 
     const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
     const monthName = monthNames[parseInt(month, 10) - 1];
 
@@ -338,17 +347,15 @@ const Booking = () => {
               YOUR BOOKING DETAILS
             </h5>
 
-            <div className="d-flex justify-content-between mb-2">
+            <div className="d-flex justify-content-between mb-4">
               <div>
-                <strong>Room Name</strong>
+                <strong style={{color: "#354259"}}>Room Name</strong>
                 <div className="numbertext">
-                  {roomDetails?.roomName
-                    ? roomDetails?.roomName
-                    : "--"}
+                  {roomDetails?.roomName ? roomDetails?.roomName : "--"}
                 </div>
               </div>
-              <div>
-                <strong>Package Name</strong>
+              <div className="text-end">
+                <strong style={{color: "#354259"}}>Package Name</strong>
                 <div className="numbertext">
                   {bookingFormData?.pkg?.roomPackageName
                     ? bookingFormData?.pkg?.roomPackageName
@@ -357,17 +364,17 @@ const Booking = () => {
               </div>
             </div>
 
-            <div className="d-flex justify-content-between mb-2">
+            <div className="d-flex justify-content-between mb-4">
               <div>
-                <strong>Interval</strong>
+                <strong style={{color: "#354259"}}>Interval</strong>
                 <div className="numbertext">
                   {bookingFormData?.pkg?.interval
                     ? `${bookingFormData?.pkg?.interval} houre`
                     : "--"}
                 </div>
               </div>
-              <div>
-                <strong>Amount</strong>
+              <div className="text-end">
+                <strong style={{color: "#354259"}}>Amount</strong>
                 <div className="numbertext">
                   {bookingFormData?.pkg?.amount
                     ? bookingFormData?.pkg?.amount
@@ -376,21 +383,46 @@ const Booking = () => {
               </div>
             </div>
 
-
-            <div className="d-flex justify-content-between mb-2">
+            <div className="d-flex justify-content-between mb-4">
               <div>
-                <strong>Start Time</strong>
+                <strong style={{ color: "#354259" }}>Start Time</strong>
                 <div className="numbertext">
                   {bookingFormData.startDateTime
-                    ? formatExactISOString(bookingFormData.startDateTime)
+                    ? (() => {
+                        const formatted = formatExactISOString(
+                          bookingFormData.startDateTime
+                        );
+                        const [date, time] =
+                          formatted.split(/ (?=\d{1,2}:\d{2} )/);
+                        return (
+                          <>
+                            <span style={{ fontWeight: "600" }}>{date}</span>
+                            <br />
+                            <span style={{ fontWeight: "600" }}>{time}</span>
+                          </>
+                        );
+                      })()
                     : "--"}
                 </div>
               </div>
-              <div>
-                <strong>End Time</strong>
+              <div className="text-end">
+                <strong style={{ color: "#354259" }}>End Time</strong>
                 <div className="numbertext">
                   {bookingFormData.endDateTime
-                    ? formatExactISOString(bookingFormData.endDateTime)
+                    ? (() => {
+                        const formatted = formatExactISOString(
+                          bookingFormData.endDateTime
+                        );
+                        const [date, time] =
+                          formatted.split(/ (?=\d{1,2}:\d{2} )/);
+                        return (
+                          <>
+                            <span style={{ fontWeight: "600" }}>{date}</span>
+                            <br />
+                            <span style={{ fontWeight: "600" }}>{time}</span>
+                          </>
+                        );
+                      })()
                     : "--"}
                 </div>
               </div>
@@ -399,7 +431,7 @@ const Booking = () => {
 
             <h6 className="mb-3 fw-bold">CHARGES</h6>
             <div className="d-flex justify-content-between mb-2">
-              <span>Room Cost</span>
+              <strong style={{color: "#354259"}} >Room Cost</strong>
               <span className="pricetext">£ {roomCost.toFixed(2)}</span>
             </div>
             {discountPercentage > 0 && (
@@ -411,7 +443,7 @@ const Booking = () => {
               </div>
             )}
             <div className="d-flex justify-content-between mb-2">
-              <span>Taxes & Fees ({taxesPercentage}%)</span>
+              <strong style={{color: "#354259"}}>Taxes & Fees ({taxesPercentage}%)</strong>
               <span className="pricetext">£ {taxes.toFixed(2)}</span>
             </div>
             <hr />

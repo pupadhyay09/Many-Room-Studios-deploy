@@ -50,18 +50,9 @@ const RoomDetails = () => {
     getRoomPackagesList();
   }, [dispatch, selectedRoom]);
 
-  // useEffect(() => {
-  //   dispatch(getRoomDropdownList());
-  // }, [dispatch]);
-
   const getRoomPackagesList = () => {
     dispatch(getRoomPackages(selectedRoom));
   };
-
-  // useEffect(() => {
-  //   dispatch(getMasterDetails("EventType"));
-  // }, [dispatch]);
-
 
   useEffect(() => {
     if (prevRef.current && nextRef.current) {
@@ -69,7 +60,15 @@ const RoomDetails = () => {
     }
   }, [prevRef.current, nextRef.current]);
 
+  useEffect(() => {
+  if (roomId) {
+    dispatch(getRoomDetails(roomId));
+  }
+}, [roomId, dispatch]);
+
   const roomImages = roomDetails?.roomImagePath || [];
+  console.log("roomimages =====>",roomImages);
+  
   let extendedImages = roomImages;
   if (roomImages.length === 2 || roomImages.length === 3) {
     extendedImages = [...roomImages, ...roomImages];
@@ -272,17 +271,6 @@ const RoomDetails = () => {
           {isPackage ?
             <div className="package-page">
               <h1>Book Your Room & Time</h1>
-              {/* <RoomTabs
-              tabs={[
-                {
-                  value: "-1",
-                  text: "All Rooms",
-                },
-                ...roomListDropDown,
-              ]}
-              activeTab={selectedRoom?.toString()}
-              onSelect={setSelectedRoom}
-            /> */}
               <PackageCard packages={roomPackages} onClickBookNow={(pkg) => {
                 console.log('pkg====>', pkg)
                 const today = new Date().toISOString().split("T")[0];

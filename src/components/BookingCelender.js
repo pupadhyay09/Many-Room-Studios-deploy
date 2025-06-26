@@ -176,7 +176,7 @@ const BookingCalendar = ({ pkg }) => {
                   <div className="d-flex justify-content-end mt-3">
                     <Button
                       onClick={handleBooking}
-                      className="next-btn py-3 w-100 me-4"
+                      className="next-btn py-3 w-100 me-xl-4"
                       variant="success"
                     >
                       Next <GrFormNextLink />

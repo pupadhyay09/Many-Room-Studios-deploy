@@ -24,7 +24,7 @@ const NavBar = () => {
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="navbarScroll" />
         <Navbar.Collapse id="navbarScroll">
-          <Nav className="mx-auto my-2 my-lg-0 fw-bold py-3 gap-5" navbarScroll>
+          <Nav className="ms-auto my-2 my-lg-0 fw-bold py-3 gap-lg-5 gap-2" navbarScroll>
             <Nav.Link as={Link} to="/">
               Home
             </Nav.Link>
