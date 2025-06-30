@@ -11,10 +11,16 @@ import Faq from "./pages/Faq";
 import Login from "./pages/login/Login";
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
+import React from "react";
+
 
 function AppRoutes() {
   const location = useLocation();
   const hideLayout = location.pathname === "/login";
+
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname]);
 
   return (
     <>
@@ -29,7 +35,7 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/rooms/:id"
+          path="/rooms"
           element={
             <PrivateRoute>
               <RoomDetails />
@@ -67,7 +73,16 @@ function AppRoutes() {
               <Faq />
             </PrivateRoute>
           }
+
         />
+        {/* <Route
+          path="/packages"
+          element={
+            <PrivateRoute>
+              <PackageList />
+            </PrivateRoute>
+          }
+        /> */}
         <Route path="/login" element={<Login />} />
       </Routes>
       {!hideLayout && <Footer />}

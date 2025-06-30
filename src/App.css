@@ -33,6 +33,11 @@
   font-family: "CormorantGaramond", serif;
 }
 
+html,
+body {
+  scroll-behavior: auto !important;
+}
+
 .addrightline {
   position: relative;
   min-height: 60px;
@@ -329,16 +334,22 @@
   padding-bottom: 10px;
   margin-bottom: 0;
   font-weight: 600;
-  margin-left: 8px;
+  /* margin-left: 8px; */
 }
 
 .housetypes span {
-  margin: 0 8px;
+  /* margin: 0 8px; */
   font-weight: 600;
 }
 
 .housedescription {
-  margin: 0 8px;
+  /* margin: 0 8px; */
+  height: 100px;
+  overflow-y: scroll;
+}
+
+.housedescription::-webkit-scrollbar {
+  display: none;
 }
 
 .sliderbtn-add {
@@ -586,6 +597,19 @@
   font-weight: bold;
 }
 
+.back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.back-btn:hover {
+  opacity: 0.7;
+}
+
 .paymentbox p {
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   padding-bottom: 0.5rem;
@@ -704,7 +728,6 @@
   margin: 1rem 0;
 }
 
-
 .custom-time-scroll {
   display: flex;
   flex-direction: column;
@@ -765,6 +788,202 @@
   background: #f6f6f6 !important;
 }
 
+.room-description {
+  height: 75px;
+  overflow-y: scroll;
+}
+
+.room-description::-webkit-scrollbar {
+  display: none;
+}
+
+.booking-details-card {
+  background: #f9f9f9;
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: none;
+  margin-bottom: 1rem;
+}
+
+.swiper-wrapper {
+  display: flex !important;
+  transition-timing-function: ease !important;
+}
+
+.swiper-slide {
+  flex-shrink: 0;
+  width: auto;
+  height: auto;
+}
+
+/* //Package Page */
+.package-page {
+  padding: 2rem;
+  font-family: Georgia, serif;
+}
+
+.room-tabs {
+  margin-bottom: 2rem;
+}
+
+.tab {
+  margin-right: 1rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #444;
+  background: white;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: black;
+  color: white;
+}
+
+.package-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  padding: 40px 5px;
+}
+
+.package-card {
+  width: 100%;
+  max-width: 385px;
+  background-color: #354259;
+  border-radius: 5px;
+}
+
+.btn-home {
+  background-color: #000;
+  color: white;
+  border: 2px solid white;
+}
+
+.btn-home:hover {
+  background-color: white;
+  color: black;
+  border: 2px solid black;
+}
+
+.package-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+}
+
+.img-wrapper {
+  height: 180px;
+  overflow: hidden;
+}
+
+.package-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.package-card:hover .package-img {
+  transform: scale(1.05);
+}
+
+.package-content {
+  padding: 20px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.package-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: white;
+}
+
+.package-desc {
+  font-size: 16px;
+  color: white;
+  flex-grow: 1;
+  margin-bottom: 15px;
+  height: 50px;
+  overflow-x: scroll;
+}
+
+.package-desc::-webkit-scrollbar {
+  display: none;
+}
+
+.package-price {
+  font-size: 18px;
+  color: white;
+  margin-bottom: 15px;
+}
+
+/* .book-btn {
+  background-color: #ff6b00;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s ease;
+} */
+
+.book-btn:hover {
+  background-color: black;
+  color: white;
+  border: 2px solid white;
+}
+
+.room-dropdown {
+  width: 100%;
+  padding: 0.5rem;
+  margin: 1rem 0;
+}
+
+.book-btn {
+  background: white;
+  color: black;
+  padding: 0.5rem 1rem;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  border: 2px solid black;
+  border-radius: 5px;
+}
+
+.room-tabs-wrapper {
+  overflow-x: auto;
+  white-space: nowrap;
+  margin-bottom: 2rem;
+}
+
+.room-tabs-scroll {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1rem;
+}
+
+.tab-button {
+  flex: 0 0 auto;
+  padding: 0.5rem 1rem;
+  border: 1px solid #444;
+  background: white;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.tab-button.active {
+  background: black;
+  color: white;
+}
+
+/* .room-tabs-wrapper::-webkit-scrollbar {
+  display: none;
+} */
+
 @media only screen and (max-width: 1210px) {
   .date-time-container {
     flex-direction: column;
@@ -790,11 +1009,19 @@
     max-width: 45% !important;
     left: 30% !important;
   }
+
+  /* .booking-details-card .d-flex {
+    justify-content: flex-start !important;
+  } */
 }
 
 @media only screen and (max-width: 992px) {
-  .room-image {
+  /* .room-image {
     width: auto;
+  } */
+
+  .set-table-btn button {
+    width: 100%;
   }
 }
 
@@ -817,8 +1044,17 @@
 
   .responsivslider {
     bottom: 5% !important;
-    max-width: 90% !important;
+    max-width: 75% !important;
     left: 5% !important;
+  }
+
+  .herobgone {
+    padding: 20px 0;
+  }
+
+  .single-image-container img {
+    width: 96% !important;
+    padding: 0 1rem !important;
   }
 }
 
@@ -859,10 +1095,6 @@
     font-size: 28px;
   }
 
-  .mainslider {
-    height: 1150px !important;
-  }
-
   .responsivslider {
     bottom: 12% !important;
     max-width: 100% !important;
@@ -874,5 +1106,48 @@
 
   .custom-next {
     bottom: 5% !important;
+  }
+
+  .room-image {
+    width: 100%;
+  }
+
+  .mainslider .swiper-slide {
+    justify-content: unset !important;
+    height: unset !important;
+  }
+
+  .mainslider .swiper-slide img {
+    border-radius: 12px !important;
+    height: unset !important;
+    width: unset !important;
+  }
+
+  .responsivslider {
+    position: unset !important;
+    padding: 20px !important;
+  }
+
+  .custom-prev,
+  .custom-next {
+    bottom: 2% !important;
+  }
+
+  .mainslider {
+    height: fit-content !important;
+  }
+
+  .package-page {
+    padding: 3rem 0.5rem;
+  }
+
+  .room-price {
+    padding: 8px;
+  }
+}
+
+@media only screen and (max-width: 1400px) {
+  .room-image {
+    height: unset;
   }
 }

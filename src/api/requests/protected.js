@@ -63,11 +63,32 @@ const getRoomDetailsApi = async (id) => {
 
 const getAvilableSlotApi = async (id, bookingDate) => {
   try {
-    const { data } = await withAuthApi.get(`/api/v1/rooms/available/slots?bookingDate=${bookingDate}&roomId=${id}`);
+    // const { data } = await withAuthApi.get(`/api/v1/rooms/available/slots?bookingDate=${bookingDate}&roomId=${id}`);
+    const { data } = await withAuthApi.get(`/api/v1/rooms/available/slots?bookingDate=${bookingDate}&roomPackageId=${id}`);
     return data;
   } catch (error) {
     console.error('Error in getAvilableSlotApi:', error);
     throw error?.response?.data || { message: "Failed to fetch available slots." };
+  }
+};
+
+const getRoomPackagesApi = async (id) => {
+  try {
+    const { data } = await withAuthApi.get(`/api/v1/roompackage/list?roomId=${id}`);
+    return data;
+  } catch (error) {
+    console.error('Error in getRoomPackagesApi:', error);
+    throw error?.response?.data || { message: "Failed to fetch room packages." };
+  }
+};
+
+const getRoomDropdownListApi = async () => {
+  try {
+    const { data } = await withAuthApi.get(`/api/v1/rooms/dropdown/list`);
+    return data;
+  } catch (error) {
+    console.error('Error in getRoomDropdownListApi:', error);
+    throw error?.response?.data || { message: "Failed to fetch room dropdown list." };
   }
 };
 
@@ -78,5 +99,7 @@ export {
   getRoomListApi,
   getMasterDetailsApi,
   getRoomDetailsApi,
-  getAvilableSlotApi
+  getAvilableSlotApi,
+  getRoomPackagesApi,
+  getRoomDropdownListApi
 };

@@ -1,5 +1,5 @@
 // RoomDetails.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Container, Card, Row, Col } from "react-bootstrap";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
@@ -11,39 +11,69 @@ import images from "../assets/images/Images";
 import { useDispatch, useSelector } from "react-redux";
 import { URLS } from "../api/Urls";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { getMasterDetails, getRoomDetails, setRoomDetails, getAvailableSlots } from "../redux/slices/rooms";
-import noImage from '../assets/images/noimage.png';
+import {
+  getMasterDetails,
+  getRoomDetails,
+  setRoomDetails,
+  getAvailableSlots,
+  getRoomDropdownList,
+  getRoomPackages,
+} from "../redux/slices/rooms";
+import noImage from "../assets/images/noimage.png";
 import { compose } from "@reduxjs/toolkit";
+import RoomTabs from "../components/RoomTabs";
+import PackageCard from "../components/PackageCard";
 
 const RoomDetails = () => {
-  const { id } = useParams(); // <-- id from URL
   const location = useLocation();
+  const { roomId } = location.state;
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
   const { roomDetails, availableSlots } = useSelector((state) => state.rooms);
+  const [isSwiperReady, setIsSwiperReady] = useState(false);
+  const [swiperInstance, setSwiperInstance] = useState(null);
+  const prevRef = useRef(null);
+  const nextRef = useRef(null);
+  const { roomPackages, roomListDropDown } = useSelector((state) => state.rooms);
+  const [selectedRoom, setSelectedRoom] = useState(roomId ? roomId : "-1");
+  const [isPackage, setIsPackage] = useState(true)
+  const [pkg, setPackage] = useState("")
 
   useEffect(() => {
-    if (id) {
-      dispatch(getRoomDetails(id));
+    if (roomId) {
+      dispatch(getRoomDetails(roomId));
     }
-  }, [id, dispatch]);
+  }, [roomId, dispatch]);
 
   useEffect(() => {
-    dispatch(getMasterDetails("EventType"));
-  }, [dispatch]);
+    getRoomPackagesList();
+  }, [dispatch, selectedRoom]);
+
+  const getRoomPackagesList = () => {
+    dispatch(getRoomPackages(selectedRoom));
+  };
 
   useEffect(() => {
-    console.log('Location state:sfbsdmf', location.state);
-  }, [location.state]);
-
-  useEffect(() => {
-    if (roomDetails?.id) {
-      const today = new Date().toISOString().split("T")[0];
-      console.log('Fetching available slots for room:', roomDetails.id, 'on date:', today);
-      dispatch(getAvailableSlots({ id: roomDetails.id, bookingDate: today }));
+    if (prevRef.current && nextRef.current) {
+      setIsSwiperReady(true);
     }
-  }, [roomDetails?.id, dispatch]);
+  }, [prevRef.current, nextRef.current]);
+
+  useEffect(() => {
+    if (roomId) {
+      dispatch(getRoomDetails(roomId));
+    }
+  }, [roomId, dispatch]);
+
+  const roomImages = roomDetails?.roomImagePath || [];
+
+  let extendedImages = roomImages;
+  if (roomImages.length === 2 || roomImages.length === 3) {
+    extendedImages = [...roomImages, ...roomImages];
+  }
+  const isSingleImage = roomImages.length === 1;
+  const showNavigation = extendedImages.length > 1;
 
   const mainroom = [
     {
@@ -68,6 +98,17 @@ const RoomDetails = () => {
     },
   ];
 
+  useEffect(() => {
+    const preFeildData = localStorage.getItem("bookingFormData");
+    console.log('preFeildData=====>', preFeildData)
+    if (preFeildData) {
+      const formData = JSON.parse(preFeildData);
+      setPackage(formData?.pkg)
+      dispatch(getAvailableSlots({ id: formData?.pkg?.id, bookingDate: formData?.startDateTime }));
+      setIsPackage(false)
+    }
+  }, []);
+
   return (
     <>
       <section>
@@ -78,76 +119,100 @@ const RoomDetails = () => {
             padding: "50px 0",
             overflow: "hidden",
             backgroundColor: "#F5F5EE",
-            height: "1000px",
+            height: isSingleImage ? "auto" : "1000px",
             position: "relative",
           }}
           className="mainslider"
         >
-          {/* Custom Navigation */}
-          <div>
-            <div
-              className="custom-prev"
-              style={{
-                position: "absolute",
-                bottom: "25%",
-                right: "20%",
-                zIndex: 10,
-              }}
-            >
-              <button className="sliderbtn-add">
-                <MdArrowLeft />
-              </button>
-            </div>
-            <div
-              className="custom-next"
-              style={{
-                position: "absolute",
-                bottom: "25%",
-                right: "15%",
-                zIndex: 10,
-              }}
-            >
-              <button className="sliderbtn-add">
-                <MdArrowRight />
-              </button>
-            </div>
-          </div>
+          {/* Custom Navigation Buttons */}
+          {showNavigation && (
+            <>
+              <div
+                className="custom-prev"
+                style={{
+                  position: "absolute",
+                  bottom: "25%",
+                  right: "20%",
+                  zIndex: 10,
+                }}
+              >
+                <button className="sliderbtn-add" ref={prevRef}>
+                  <MdArrowLeft />
+                </button>
+              </div>
+              <div
+                className="custom-next"
+                style={{
+                  position: "absolute",
+                  bottom: "25%",
+                  right: "15%",
+                  zIndex: 10,
+                }}
+              >
+                <button className="sliderbtn-add" ref={nextRef}>
+                  <MdArrowRight />
+                </button>
+              </div>
+            </>
+          )}
 
-          <Swiper
-            slidesPerView={3}
-            centeredSlides={true}
-            spaceBetween={30}
-            onSlideChange={(swiper) => { console.log('swiper.realIndex===>', swiper.realIndex); setActiveIndex(swiper.realIndex) }}
-            loop={true}
-            navigation={{
-              prevEl: ".custom-prev",
-              nextEl: ".custom-next",
-            }}
-            modules={[Navigation]}
-            style={{
-              padding: "0 20px",
-              margin: "0 20px",
-              overflow: "visible",
-            }}
-            breakpoints={{
-              1200: {
-                slidesPerView: 3,
-                spaceBetween: 30,
-              },
-              768: {
-                slidesPerView: 2,
-                spaceBetween: 20,
-              },
-              320: {
-                slidesPerView: 1,
-                spaceBetween: 30,
-              },
-            }}
-          >
-            {
-
-              roomDetails && roomDetails?.roomImagePath?.length > 0 ?
-                roomDetails?.roomImagePath?.map((room, index) => {
+          {(isSingleImage || isSwiperReady) &&
+            (isSingleImage ? (
+              <div className="single-image-container">
+                <img
+                  src={
+                    roomImages[0]
+                      ? roomImages[0].startsWith("http")
+                        ? roomImages[0]
+                        : URLS.Image_Url + roomImages[0]
+                      : noImage
+                  }
+                  alt={roomDetails?.roomName}
+                  style={{
+                    width: "50%",
+                    height: "auto",
+                    borderRadius: "16px",
+                    margin: "0 auto",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                />
+              </div>
+            ) : (
+              <Swiper
+                onSwiper={setSwiperInstance}
+                slidesPerView={1}
+                centeredSlides={true}
+                spaceBetween={30}
+                loop={extendedImages.length > 1}
+                navigation={
+                  showNavigation
+                    ? {
+                      prevEl: prevRef.current,
+                      nextEl: nextRef.current,
+                    }
+                    : false
+                }
+                modules={[Navigation]}
+                style={{
+                  padding: "0 20px",
+                  overflow: "visible",
+                }}
+                breakpoints={{
+                  1200: {
+                    slidesPerView: extendedImages.length > 1 ? 3 : 1,
+                    spaceBetween: 30,
+                  },
+                  768: {
+                    slidesPerView: extendedImages.length > 1 ? 2 : 1,
+                    spaceBetween: 20,
+                  },
+                  320: { slidesPerView: 1, spaceBetween: 30 },
+                }}
+                onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
+              >
+                {extendedImages.map((room, index) => {
                   const isActive = index === activeIndex;
                   let imgSrc = room ? URLS.Image_Url + room : noImage;
                   return (
@@ -156,8 +221,7 @@ const RoomDetails = () => {
                       style={{
                         transform: isActive ? "scale(1)" : "scale(0.9)",
                         height: isActive ? "620px" : "580px",
-                        transition: "transform 0.3s ease, height 0.3s ease",
-                        borderRadius: "16px",
+                        transition: "transform 0.7s ease, height 0.5s ease",
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "flex-end",
@@ -172,59 +236,38 @@ const RoomDetails = () => {
                           height: "100%",
                           objectFit: "cover",
                           borderRadius: "16px",
+                          borderTopLeftRadius: isActive ? "100px" : "16px",
+                          borderBottomRightRadius: isActive ? "100px" : "16px",
+                          border: isActive
+                            ? "2px solid black"
+                            : "2px solid transparent",
                         }}
-                        className={isActive ? "add" : ""}
-                        onError={() => { imgSrc = noImage; }}
                       />
                     </SwiperSlide>
                   );
-                })
+                })}
+              </Swiper>
+            ))}
 
-                : <SwiperSlide
-                  key={0}
-                  style={{
-                    transform: "scale(1)",
-                    height: "620px",
-                    transition: "transform 0.3s ease, height 0.3s ease",
-                    borderRadius: "16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "flex-end",
-                    position: "relative",
-                  }}
-                >
-                  <img
-                    src={noImage}
-                    alt={roomDetails?.roomName}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      borderRadius: "16px",
-                    }}
-                    className={"add"}
-                  // onError={handleImageError}
-                  />
-                </SwiperSlide>
-            }
-          </Swiper>
-
-          {/* STATIC TEXT SECTION (not sliding) */}
+          {/* Static text section */}
           <div
             style={{
-              position: "absolute",
-              bottom: "20px",
-              left: "35%",
-              bottom: "8%",
+              position: isSingleImage ? "unset" : "absolute",
+              bottom: isSingleImage ? "unset" : "6%",
+              left: isSingleImage ? "unset" : "35%",
               padding: "20px",
-              maxWidth: "33%",
+              maxWidth: isSingleImage ? "50%" : "33%",
+              margin: isSingleImage ? "0 auto" : "unset",
             }}
             className="responsivslider"
           >
             <h5 className="housename">{roomDetails?.roomName}</h5>
             <p className="housetypes">
-              <span>Max: {roomDetails?.capacity}</span>{" "}
-              <span>{roomDetails.totalBeds + ' bed ' + roomDetails?.totalSofas + ' sofa'}</span>{" "}
+              <span>
+                Max: {roomDetails?.capacity} &nbsp; | &nbsp;
+                {roomDetails.totalBeds} bed {roomDetails?.totalSofas} sofa
+              </span>
+              <br />
               <span>Event Type: {roomDetails.roomEventsName}</span>
             </p>
             <p className="housedescription">{roomDetails.description}</p>
@@ -232,17 +275,38 @@ const RoomDetails = () => {
         </div>
       </section>
 
+      {/* Booking Calendar Section */}
       <section>
         <Container>
-          <div className="bookingdesign">
-            <BookingCelender availableSlots={availableSlots} />
-          </div>
+          {isPackage ?
+            <div className="package-page">
+              <h1>Book Your Room & Time</h1>
+              <button className="back-btn" onClick={() => window.history.back()}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 18L9 12L15 6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg> back
+              </button>
+              <PackageCard packages={roomPackages} onClickBookNow={(pkg) => {
+                console.log('pkg====>', pkg)
+                const today = new Date().toISOString().split("T")[0];
+                setPackage(pkg)
+                dispatch(getAvailableSlots({ id: pkg.id, bookingDate: today }));
+                setIsPackage(false)
+              }} />
+            </div>
+            :
+            <div className="bookingdesign">
+              <BookingCelender pkg={pkg} onClickBack={() => { setIsPackage(true); localStorage.setItem("bookingFormData", ""); }} />
+            </div>
+          }
+
         </Container>
       </section>
 
+      {/* Discover Section */}
       <section>
         <div className="herobgone">
-          <Container className="my-5">
+          <Container className="my-sm-5 mb-5 mb-sm-0">
             <Row>
               <Col md={12} className="text-center my-5">
                 <h1>Discover your desired space</h1>
