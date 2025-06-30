@@ -597,6 +597,19 @@ body {
   font-weight: bold;
 }
 
+.back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.back-btn:hover {
+  opacity: 0.7;
+}
+
 .paymentbox p {
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   padding-bottom: 0.5rem;
@@ -839,6 +852,7 @@ body {
   background-color: #354259;
   border-radius: 5px;
 }
+
 .btn-home {
   background-color: #000;
   color: white;
@@ -965,6 +979,7 @@ body {
   background: black;
   color: white;
 }
+
 /* .room-tabs-wrapper::-webkit-scrollbar {
   display: none;
 } */

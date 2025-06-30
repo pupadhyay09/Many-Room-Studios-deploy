@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { getAvailableSlots } from "../redux/slices/rooms";
 
-const BookingCalendar = ({ pkg }) => {
+const BookingCalendar = ({ pkg, onClickBack }) => {
   const [selectedDates, setSelectedDates] = useState([]);
   const [selectedSlotsByDate, setSelectedSlotsByDate] = useState({});
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -40,6 +40,7 @@ const BookingCalendar = ({ pkg }) => {
   };
 
   const handleDateSelect = async (date) => {
+    console.log('date====>', date)
     const dateKey = formatDate(date);
     setCurrentDate(date);
     setSelectedDates([date]);
@@ -80,16 +81,43 @@ const BookingCalendar = ({ pkg }) => {
       ],
       startDateTime: startDate,
       endDateTime: endDate,
+      gridbookingSlotListByDate: selectedSlotsByDate,
+      selectedDates,
+      currentDate,
       pkg: pkg
     };
-
     localStorage.setItem("bookingFormData", JSON.stringify(bookingFormData));
     navigate("/booking", { state: bookingFormData });
   };
 
+  useEffect(() => {
+    const preFeildData = localStorage.getItem("bookingFormData");
+    if (preFeildData) {
+      const formData = JSON.parse(preFeildData);
+      if (formData.gridbookingSlotListByDate) {
+        setSelectedSlotsByDate(formData.gridbookingSlotListByDate);
+      }
+      if (formData.selectedDates && Array.isArray(formData.selectedDates)) {
+        setSelectedDates(
+          formData.selectedDates.map((dateStr) => {
+            const dateObj = new Date(dateStr);
+            return dateObj;
+          })
+        );
+      }
+      setCurrentDate(new Date(formData?.currentDate))
+    }
+  }, []);
+
+
   return (
     <Container className="booking-wrapper">
       <Row className="booking-card">
+        <button className="back-btn" onClick={onClickBack}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18L9 12L15 6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg> back
+        </button>
         <Col md={5} className="left-panel">
           <img src={images.logo} alt="celender logo" className="mb-3" />
           <p className="mb-0 roomtext">Many Rooms Studio</p>

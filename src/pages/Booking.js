@@ -19,7 +19,7 @@ const Booking = () => {
   const navigate = useNavigate();
   const bookingFormData = location.state || {};
   const { roomDetails } = useSelector((state) => state.rooms);
-  console.log("bookingFormData====>", bookingFormData);
+  console.log("roomDetails====>", roomDetails);
   const [imgSrc, setImgSrc] = useState(
     roomDetails?.roomImagePath?.length > 0
       ? URLS.Image_Url + roomDetails?.roomImagePath[0]
@@ -72,7 +72,7 @@ const Booking = () => {
 
     const data = {
       franchiseeAdminID: roomDetails?.franchiseeAdminID,
-      roomEventID: roomDetails?.eventType,
+      roomEventID: roomDetails?.roomEventIDList?.length > 0 ? roomDetails?.roomEventIDList[0] : 9,
       roomID: roomDetails?.id,
       roomPackageID: bookingFormData?.pkg?.id,
       bookingStartDateTime: bookingFormData?.startDateTime,
@@ -177,8 +177,9 @@ const Booking = () => {
               </div>
               <div className="textlocation">
                 <p>
-                  Chobotovskaya 2nd avenue <br />
-                  Moscow
+                  {"Room Name :" + roomDetails?.roomName}
+                  <br />
+                  {"Room Package Name :" + roomDetails?.roomPackageName}
                 </p>
               </div>
             </Col>
@@ -349,13 +350,13 @@ const Booking = () => {
 
             <div className="d-flex justify-content-between mb-4">
               <div>
-                <strong style={{color: "#354259"}}>Room Name</strong>
+                <strong style={{ color: "#354259" }}>Room Name</strong>
                 <div className="numbertext">
                   {roomDetails?.roomName ? roomDetails?.roomName : "--"}
                 </div>
               </div>
               <div className="text-end">
-                <strong style={{color: "#354259"}}>Package Name</strong>
+                <strong style={{ color: "#354259" }}>Package Name</strong>
                 <div className="numbertext">
                   {bookingFormData?.pkg?.roomPackageName
                     ? bookingFormData?.pkg?.roomPackageName
@@ -366,7 +367,7 @@ const Booking = () => {
 
             <div className="d-flex justify-content-between mb-4">
               <div>
-                <strong style={{color: "#354259"}}>Interval</strong>
+                <strong style={{ color: "#354259" }}>Interval</strong>
                 <div className="numbertext">
                   {bookingFormData?.pkg?.interval
                     ? `${bookingFormData?.pkg?.interval} houre`
@@ -374,7 +375,7 @@ const Booking = () => {
                 </div>
               </div>
               <div className="text-end">
-                <strong style={{color: "#354259"}}>Amount</strong>
+                <strong style={{ color: "#354259" }}>Amount</strong>
                 <div className="numbertext">
                   {bookingFormData?.pkg?.amount
                     ? bookingFormData?.pkg?.amount
@@ -389,19 +390,19 @@ const Booking = () => {
                 <div className="numbertext">
                   {bookingFormData.startDateTime
                     ? (() => {
-                        const formatted = formatExactISOString(
-                          bookingFormData.startDateTime
-                        );
-                        const [date, time] =
-                          formatted.split(/ (?=\d{1,2}:\d{2} )/);
-                        return (
-                          <>
-                            <span style={{ fontWeight: "600" }}>{date}</span>
-                            <br />
-                            <span style={{ fontWeight: "600" }}>{time}</span>
-                          </>
-                        );
-                      })()
+                      const formatted = formatExactISOString(
+                        bookingFormData.startDateTime
+                      );
+                      const [date, time] =
+                        formatted.split(/ (?=\d{1,2}:\d{2} )/);
+                      return (
+                        <>
+                          <span style={{ fontWeight: "600" }}>{date}</span>
+                          <br />
+                          <span style={{ fontWeight: "600" }}>{time}</span>
+                        </>
+                      );
+                    })()
                     : "--"}
                 </div>
               </div>
@@ -410,19 +411,19 @@ const Booking = () => {
                 <div className="numbertext">
                   {bookingFormData.endDateTime
                     ? (() => {
-                        const formatted = formatExactISOString(
-                          bookingFormData.endDateTime
-                        );
-                        const [date, time] =
-                          formatted.split(/ (?=\d{1,2}:\d{2} )/);
-                        return (
-                          <>
-                            <span style={{ fontWeight: "600" }}>{date}</span>
-                            <br />
-                            <span style={{ fontWeight: "600" }}>{time}</span>
-                          </>
-                        );
-                      })()
+                      const formatted = formatExactISOString(
+                        bookingFormData.endDateTime
+                      );
+                      const [date, time] =
+                        formatted.split(/ (?=\d{1,2}:\d{2} )/);
+                      return (
+                        <>
+                          <span style={{ fontWeight: "600" }}>{date}</span>
+                          <br />
+                          <span style={{ fontWeight: "600" }}>{time}</span>
+                        </>
+                      );
+                    })()
                     : "--"}
                 </div>
               </div>
@@ -431,7 +432,7 @@ const Booking = () => {
 
             <h6 className="mb-3 fw-bold">CHARGES</h6>
             <div className="d-flex justify-content-between mb-2">
-              <strong style={{color: "#354259"}} >Room Cost</strong>
+              <strong style={{ color: "#354259" }} >Room Cost</strong>
               <span className="pricetext">£ {roomCost.toFixed(2)}</span>
             </div>
             {discountPercentage > 0 && (
@@ -443,7 +444,7 @@ const Booking = () => {
               </div>
             )}
             <div className="d-flex justify-content-between mb-2">
-              <strong style={{color: "#354259"}}>Taxes & Fees ({taxesPercentage}%)</strong>
+              <strong style={{ color: "#354259" }}>Taxes & Fees ({taxesPercentage}%)</strong>
               <span className="pricetext">£ {taxes.toFixed(2)}</span>
             </div>
             <hr />

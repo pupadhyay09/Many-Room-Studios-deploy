@@ -61,14 +61,13 @@ const RoomDetails = () => {
   }, [prevRef.current, nextRef.current]);
 
   useEffect(() => {
-  if (roomId) {
-    dispatch(getRoomDetails(roomId));
-  }
-}, [roomId, dispatch]);
+    if (roomId) {
+      dispatch(getRoomDetails(roomId));
+    }
+  }, [roomId, dispatch]);
 
   const roomImages = roomDetails?.roomImagePath || [];
-  console.log("roomimages =====>",roomImages);
-  
+
   let extendedImages = roomImages;
   if (roomImages.length === 2 || roomImages.length === 3) {
     extendedImages = [...roomImages, ...roomImages];
@@ -98,6 +97,17 @@ const RoomDetails = () => {
       image: `${images.house4}`,
     },
   ];
+
+  useEffect(() => {
+    const preFeildData = localStorage.getItem("bookingFormData");
+    console.log('preFeildData=====>', preFeildData)
+    if (preFeildData) {
+      const formData = JSON.parse(preFeildData);
+      setPackage(formData?.pkg)
+      dispatch(getAvailableSlots({ id: formData?.pkg?.id, bookingDate: formData?.startDateTime }));
+      setIsPackage(false)
+    }
+  }, []);
 
   return (
     <>
@@ -271,6 +281,11 @@ const RoomDetails = () => {
           {isPackage ?
             <div className="package-page">
               <h1>Book Your Room & Time</h1>
+              <button className="back-btn" onClick={() => window.history.back()}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 18L9 12L15 6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg> back
+              </button>
               <PackageCard packages={roomPackages} onClickBookNow={(pkg) => {
                 console.log('pkg====>', pkg)
                 const today = new Date().toISOString().split("T")[0];
@@ -281,7 +296,7 @@ const RoomDetails = () => {
             </div>
             :
             <div className="bookingdesign">
-              <BookingCelender pkg={pkg} />
+              <BookingCelender pkg={pkg} onClickBack={() => { setIsPackage(true); localStorage.setItem("bookingFormData", ""); }} />
             </div>
           }
 
