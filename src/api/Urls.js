@@ -1,9 +1,9 @@
 export const URLS = {
   //Live URLs
-  // BASE_URL: "https://amzoo.eagletechsolutions.uk",
-  // Image_Url: "https://amzoo.eagletechsolutions.uk/Fileupload/",
-  BASE_URL: "https://pms-api-dev.eagletechsolutions.uk",
-  Image_Url: "https://pms-api-dev.eagletechsolutions.uk/Fileupload/",
+  BASE_URL: "https://amzoo.eagletechsolutions.uk",
+  Image_Url: "https://amzoo.eagletechsolutions.uk/Fileupload/",
+  // BASE_URL: "https://pms-api-dev.eagletechsolutions.uk",
+  // Image_Url: "https://pms-api-dev.eagletechsolutions.uk/Fileupload/",
 
   //Local URLs
   // BASE_URL: "https://localhost:5283",
