@@ -848,7 +848,7 @@ body {
 
 .package-card {
   width: 100%;
-  max-width: 385px;
+  /* max-width: 385px; */
   background-color: #354259;
   border-radius: 5px;
 }
@@ -901,23 +901,50 @@ body {
   color: white;
 }
 
-.package-desc {
+/* .package-desc {
   font-size: 16px;
   color: white;
   flex-grow: 1;
   margin-bottom: 15px;
   height: 50px;
   overflow-x: scroll;
+} */
+.package-desc {
+  font-size: 16px;
+  color: white;
+  margin-bottom: 0px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.package-desc::-webkit-scrollbar {
-  display: none;
+.package-desc.expanded {
+  -webkit-line-clamp: unset;
+  display: block;
+  overflow: visible;
 }
+
+.toggle-button {
+  background: none;
+  border: none;
+  color: #00bcd4;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0px;
+  margin-left: 92%;
+}
+
+/* .package-desc::-webkit-scrollbar {
+  display: none;
+} */
 
 .package-price {
   font-size: 18px;
   color: white;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 /* .book-btn {
@@ -980,9 +1007,33 @@ body {
   color: white;
 }
 
-/* .room-tabs-wrapper::-webkit-scrollbar {
-  display: none;
-} */
+
+/* //Praveen Code Css */
+.room-tabs-container {
+  display: flex;
+  overflow-x: auto;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.room-tab {
+  border: 1px solid #333;
+  background-color: #f8f8f8;
+  padding: 10px 20px;
+  font-style: normal;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.room-tab.selected {
+  background-color: #005b6b;
+  color: white;
+}
+
+.room-tab:focus {
+  outline: none;
+}
 
 @media only screen and (max-width: 1210px) {
   .date-time-container {

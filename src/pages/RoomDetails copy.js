@@ -26,7 +26,7 @@ import PackageCard from "../components/PackageCard";
 
 const RoomDetails = () => {
   const location = useLocation();
-  const { roomId, pkgs } = location.state;
+  const { roomId } = location.state;
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -38,7 +38,7 @@ const RoomDetails = () => {
   const { roomPackages, roomListDropDown } = useSelector((state) => state.rooms);
   const [selectedRoom, setSelectedRoom] = useState(roomId ? roomId : "-1");
   const [isPackage, setIsPackage] = useState(true)
-  const [pkg, setPackage] = useState(pkgs ? pkgs : "")
+  const [pkg, setPackage] = useState("")
 
   useEffect(() => {
     if (roomId) {
@@ -47,10 +47,24 @@ const RoomDetails = () => {
   }, [roomId, dispatch]);
 
   useEffect(() => {
+    getRoomPackagesList();
+  }, [dispatch, selectedRoom]);
+
+  const getRoomPackagesList = () => {
+    dispatch(getRoomPackages(selectedRoom));
+  };
+
+  useEffect(() => {
     if (prevRef.current && nextRef.current) {
       setIsSwiperReady(true);
     }
   }, [prevRef.current, nextRef.current]);
+
+  useEffect(() => {
+    if (roomId) {
+      dispatch(getRoomDetails(roomId));
+    }
+  }, [roomId, dispatch]);
 
   const roomImages = roomDetails?.roomImagePath || [];
 
@@ -91,6 +105,7 @@ const RoomDetails = () => {
       const formData = JSON.parse(preFeildData);
       setPackage(formData?.pkg)
       dispatch(getAvailableSlots({ id: formData?.pkg?.id, bookingDate: formData?.startDateTime }));
+      setIsPackage(false)
     }
   }, []);
 
@@ -248,10 +263,10 @@ const RoomDetails = () => {
           >
             <h5 className="housename">{roomDetails?.roomName}</h5>
             <p className="housetypes">
-              {/* <span>
+              <span>
                 Max: {roomDetails?.capacity} &nbsp; | &nbsp;
                 {roomDetails.totalBeds} bed {roomDetails?.totalSofas} sofa
-              </span> */}
+              </span>
               <br />
               <span>Event Type: {roomDetails.roomEventsName}</span>
             </p>
@@ -263,9 +278,28 @@ const RoomDetails = () => {
       {/* Booking Calendar Section */}
       <section>
         <Container>
-          <div className="bookingdesign">
-            <BookingCelender pkg={pkg} onClickBack={() => { window.history.back(); localStorage.setItem("bookingFormData", ""); }} />
-          </div>
+          {isPackage ?
+            <div className="package-page">
+              <h1>Book Your Room & Time</h1>
+              <button className="back-btn" onClick={() => window.history.back()}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 18L9 12L15 6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg> back
+              </button>
+              <PackageCard packages={roomPackages} onClickBookNow={(pkg) => {
+                console.log('pkg====>', pkg)
+                const today = new Date().toISOString().split("T")[0];
+                setPackage(pkg)
+                dispatch(getAvailableSlots({ id: pkg.id, bookingDate: today }));
+                setIsPackage(false)
+              }} />
+            </div>
+            :
+            <div className="bookingdesign">
+              <BookingCelender pkg={pkg} onClickBack={() => { setIsPackage(true); localStorage.setItem("bookingFormData", ""); }} />
+            </div>
+          }
+
         </Container>
       </section>
 

@@ -38,9 +38,9 @@ const RoomCardOne = ({
       </div>
       <div>
         <h5 className="room-title">{roomName}</h5>
-        <p className="room-meta">
+        {/* <p className="room-meta">
           {totalBeds} Beds {totalSofas} Sofas
-        </p>
+        </p> */}
         <p className="room-description">{description}</p>
         <button className="book-btn" onClick={() => { onBookClick(id) }}>
           Book Now

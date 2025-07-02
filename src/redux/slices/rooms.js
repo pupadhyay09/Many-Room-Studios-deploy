@@ -15,6 +15,7 @@ const initialState = {
 export const getRoomList = createAsyncThunk("room/list", async (jsonData, thunkAPI) => {
   try {
     const data = await getRoomListApi(jsonData);
+    console.log('data====>',data)
     return data;
   } catch (error) {
     return thunkAPI.rejectWithValue(error?.message || "Failed to fetch room list.");
@@ -62,7 +63,7 @@ export const getAvailableSlots = createAsyncThunk("room/availableSlots", async (
 
 export const getRoomPackages = createAsyncThunk("room/packages", async (roomId, thunkAPI) => {
   try {
-    const data = await getRoomPackagesApi(roomId);
+    const data = await getRoomPackagesApi(roomId);  
     return data;
   } catch (error) {
     return thunkAPI.rejectWithValue(error?.message || "Failed to fetch room packages.");
