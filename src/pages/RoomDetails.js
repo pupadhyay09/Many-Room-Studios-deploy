@@ -12,17 +12,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { URLS } from "../api/Urls";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
-  getMasterDetails,
   getRoomDetails,
-  setRoomDetails,
+  getRoomPackageDetails,
   getAvailableSlots,
-  getRoomDropdownList,
-  getRoomPackages,
 } from "../redux/slices/rooms";
 import noImage from "../assets/images/noimage.png";
-import { compose } from "@reduxjs/toolkit";
-import RoomTabs from "../components/RoomTabs";
-import PackageCard from "../components/PackageCard";
 
 const RoomDetails = () => {
   const location = useLocation();
@@ -30,19 +24,19 @@ const RoomDetails = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
-  const { roomDetails, availableSlots } = useSelector((state) => state.rooms);
   const [isSwiperReady, setIsSwiperReady] = useState(false);
   const [swiperInstance, setSwiperInstance] = useState(null);
   const prevRef = useRef(null);
   const nextRef = useRef(null);
-  const { roomPackages, roomListDropDown } = useSelector((state) => state.rooms);
-  const [selectedRoom, setSelectedRoom] = useState(roomId ? roomId : "-1");
-  const [isPackage, setIsPackage] = useState(true)
+  const { roomDetails, roomPackageDetails } = useSelector((state) => state.rooms);
   const [pkg, setPackage] = useState(pkgs ? pkgs : "")
-
+  console.log('roomPackageDetails====>', roomPackageDetails)
   useEffect(() => {
     if (roomId) {
       dispatch(getRoomDetails(roomId));
+    }
+    if (pkgs?.id) {
+      dispatch(getRoomPackageDetails(pkgs?.id));
     }
   }, [roomId, dispatch]);
 
@@ -52,7 +46,7 @@ const RoomDetails = () => {
     }
   }, [prevRef.current, nextRef.current]);
 
-  const roomImages = roomDetails?.roomImagePath || [];
+  const roomImages = roomPackageDetails?.roomPackageImagePath || [];
 
   let extendedImages = roomImages;
   if (roomImages.length === 2 || roomImages.length === 3) {
@@ -152,7 +146,7 @@ const RoomDetails = () => {
                         : URLS.Image_Url + roomImages[0]
                       : noImage
                   }
-                  alt={roomDetails?.roomName}
+                  alt={roomPackageDetails?.roomPackageName}
                   style={{
                     width: "50%",
                     height: "auto",
@@ -199,7 +193,7 @@ const RoomDetails = () => {
               >
                 {extendedImages.map((room, index) => {
                   const isActive = index === activeIndex;
-                  let imgSrc = room ? URLS.Image_Url + room : noImage;
+                  let imgSrc = room ? URLS.Image_Url + room?.imagePath : noImage;
                   return (
                     <SwiperSlide
                       key={index}
@@ -215,7 +209,7 @@ const RoomDetails = () => {
                     >
                       <img
                         src={imgSrc}
-                        alt={roomDetails?.roomName}
+                        alt={roomPackageDetails?.roomPackageName}
                         style={{
                           width: "100%",
                           height: "100%",
@@ -238,7 +232,7 @@ const RoomDetails = () => {
           <div
             style={{
               position: isSingleImage ? "unset" : "absolute",
-              bottom: isSingleImage ? "unset" : "6%",
+              bottom: isSingleImage ? "unset" : "5%",
               left: isSingleImage ? "unset" : "35%",
               padding: "20px",
               maxWidth: isSingleImage ? "50%" : "33%",
@@ -246,21 +240,26 @@ const RoomDetails = () => {
             }}
             className="responsivslider"
           >
-            <h5 className="housename">{roomDetails?.roomName}</h5>
-            <p className="housetypes">
-              {/* <span>
-                Max: {roomDetails?.capacity} &nbsp; | &nbsp;
-                {roomDetails.totalBeds} bed {roomDetails?.totalSofas} sofa
-              </span> */}
-              <br />
-              <span>Event Type: {roomDetails.roomEventsName}</span>
-            </p>
-            <p className="housedescription">{roomDetails.description}</p>
+            <div className="row">
+              <div className="col-lg-6">
+                <p>Room Name: <span className="housename">{roomDetails?.roomName}</span> </p>
+              </div>
+              <div className="col-lg-6">
+                <p>Package Name: <span className="housename">{roomPackageDetails?.roomPackageName}</span> </p>
+              </div>
+              <div className="col-lg-6">
+                <p>Package Interval: <span className="housename">{roomPackageDetails?.interval}hr</span></p>
+              </div>
+              <div className="col-lg-6">
+                <p>Package Price: <span className="housename">{'£' + roomPackageDetails?.amount}</span></p>
+              </div>
+            </div>
+            <p className="housedescription">{roomPackageDetails.description}</p>
           </div>
+
         </div>
       </section>
 
-      {/* Booking Calendar Section */}
       <section>
         <Container>
           <div className="bookingdesign">
@@ -269,7 +268,6 @@ const RoomDetails = () => {
         </Container>
       </section>
 
-      {/* Discover Section */}
       <section>
         <div className="herobgone">
           <Container className="my-sm-5 mb-5 mb-sm-0">

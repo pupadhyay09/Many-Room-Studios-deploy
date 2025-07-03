@@ -378,7 +378,7 @@ const Booking = () => {
                 <strong style={{ color: "#354259" }}>Amount</strong>
                 <div className="numbertext">
                   {bookingFormData?.pkg?.amount
-                    ? bookingFormData?.pkg?.amount
+                    ? '£' + bookingFormData?.pkg?.amount
                     : "--"}
                 </div>
               </div>

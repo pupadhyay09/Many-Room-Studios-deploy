@@ -1,4 +1,4 @@
-import { getMasterDetailsApi, getRoomListApi, roomBookingApi, getRoomDetailsApi, getAvilableSlotApi, getRoomPackagesApi, getRoomDropdownListApi } from "../../api/requests/protected";
+import { getMasterDetailsApi, getRoomListApi, roomBookingApi, getRoomDetailsApi, getRoomPackageDetailsApi, getAvilableSlotApi, getRoomPackagesApi, getRoomDropdownListApi } from "../../api/requests/protected";
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
@@ -7,6 +7,7 @@ const initialState = {
   roomList: [],
   masterList: [],
   roomDetails: {},
+  roomPackageDetails: {},
   availableSlots: [],
   roomPackages: [],
   roomListDropDown: [],
@@ -15,7 +16,7 @@ const initialState = {
 export const getRoomList = createAsyncThunk("room/list", async (jsonData, thunkAPI) => {
   try {
     const data = await getRoomListApi(jsonData);
-    console.log('data====>',data)
+    console.log('data====>', data)
     return data;
   } catch (error) {
     return thunkAPI.rejectWithValue(error?.message || "Failed to fetch room list.");
@@ -51,6 +52,15 @@ export const getRoomDetails = createAsyncThunk("room/details", async (id, thunkA
   }
 });
 
+export const getRoomPackageDetails = createAsyncThunk("roomPackage/details", async (id, thunkAPI) => {
+  try {
+    const data = await getRoomPackageDetailsApi(id);
+    return data;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error?.message || "Failed to fetch room details.");
+  }
+});
+
 export const getAvailableSlots = createAsyncThunk("room/availableSlots", async ({ id, bookingDate }, thunkAPI) => {
   console.log('id====>', id)
   try {
@@ -63,7 +73,7 @@ export const getAvailableSlots = createAsyncThunk("room/availableSlots", async (
 
 export const getRoomPackages = createAsyncThunk("room/packages", async (roomId, thunkAPI) => {
   try {
-    const data = await getRoomPackagesApi(roomId);  
+    const data = await getRoomPackagesApi(roomId);
     return data;
   } catch (error) {
     return thunkAPI.rejectWithValue(error?.message || "Failed to fetch room packages.");
@@ -124,6 +134,17 @@ const userSlice = createSlice({
         state.roomDetails = payload;
       })
       .addCase(getRoomDetails.rejected, (state) => {
+        state.isLoading = false;
+      })
+      .addCase(getRoomPackageDetails.pending, (state, action) => {
+        state.isLoading = true;
+      })
+      .addCase(getRoomPackageDetails.fulfilled, (state, action) => {
+        const payload = action.payload;
+        state.isLoading = false;
+        state.roomPackageDetails = payload;
+      })
+      .addCase(getRoomPackageDetails.rejected, (state) => {
         state.isLoading = false;
       })
       .addCase(getAvailableSlots.pending, (state) => {

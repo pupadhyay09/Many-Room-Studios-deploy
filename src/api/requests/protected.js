@@ -61,6 +61,16 @@ const getRoomDetailsApi = async (id) => {
   }
 };
 
+const getRoomPackageDetailsApi = async (id) => {
+  try {
+    const { data } = await withAuthApi.get(`/api/v1/roompackage/${id}`);
+    return data;
+  } catch (error) {
+    console.error('Error in getRoomPackageDetailsApi:', error);
+    throw error?.response?.data || { message: "Failed to fetch room package details." };
+  }
+};
+
 const getAvilableSlotApi = async (id, bookingDate) => {
   try {
     // const { data } = await withAuthApi.get(`/api/v1/rooms/available/slots?bookingDate=${bookingDate}&roomId=${id}`);
@@ -99,6 +109,7 @@ export {
   getRoomListApi,
   getMasterDetailsApi,
   getRoomDetailsApi,
+  getRoomPackageDetailsApi,
   getAvilableSlotApi,
   getRoomPackagesApi,
   getRoomDropdownListApi
